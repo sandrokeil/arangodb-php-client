@@ -1,0 +1,48 @@
+language: php
+
+matrix:
+  fast_finish: true
+  include:
+    - php: 7.1
+      env:
+        - DEPENDENCIES=""
+        - EXECUTE_CS_CHECK=true
+        - ARANGODB_VERSION=3.3.19
+    - php: 7.1
+      env:
+        - DEPENDENCIES="--prefer-lowest --prefer-stable"
+        - ARANGODB_VERSION=3.3.0
+    - php: 7.2
+      env:
+        - DEPENDENCIES=""
+        - TEST_COVERAGE=true
+        - ARANGODB_VERSION=3.3.19
+    - php: 7.2
+      env:
+        - DEPENDENCIES="--prefer-lowest --prefer-stable"
+        - ARANGODB_VERSION=3.3.0
+
+addons:
+  hosts:
+    - arangodb
+
+cache:
+  directories:
+    - $HOME/.composer/cache
+    - $HOME/.php-cs-fixer
+    - $HOME/.local
+
+before_script:
+  - mkdir -p "$HOME/.php-cs-fixer"
+  - phpenv config-rm xdebug.ini
+  - composer self-update
+  - composer update --prefer-dist $DEPENDENCIES
+  - ./test/travis/setup_arangodb.sh
+
+script:
+  - if [[ $EXECUTE_CS_CHECK == 'true' ]]; then ./vendor/bin/phpcs; fi
+  - if [[ $EXECUTE_CS_CHECK == 'true' ]]; then ./vendor/bin/docheader check src/ tests/; fi
+  - if [[ $TEST_COVERAGE == 'true' ]]; then php -dzend_extension=xdebug.so ./vendor/bin/phpunit --coverage-text --coverage-clover ./build/logs/clover.xml; else ./vendor/bin/phpunit; fi
+
+after_success:
+  - if [[ $TEST_COVERAGE == 'true' ]]; then php vendor/bin/coveralls -v; fi
