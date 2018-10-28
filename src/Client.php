@@ -190,7 +190,7 @@ class Client implements \Psr\Http\Client\ClientInterface
         return new Response(
             $response->getHttpCode(),
             $response->getHeaders(),
-            $response->getBody()
+            $useVpack ? new VpackStream($response->getBody(), true) : $response->getBody()
         );
     }
 

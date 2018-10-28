@@ -13,8 +13,7 @@ namespace ArangoDbTest;
 
 use ArangoDb\Client;
 use ArangoDb\Type\CreateCollection;
-use ArangoDb\Type\CreateDatabase;
-use ArangoDb\Type\DeleteDatabase;
+use ArangoDb\VpackStream;
 use Fig\Http\Message\StatusCodeInterface;
 use PHPUnit\Framework\TestCase;
 
@@ -48,6 +47,17 @@ class ClientTest extends TestCase
         $createCollection = CreateCollection::with('myCol');
         $response = $this->client->sendRequest($createCollection->toRequest());
 
-        $this->assertEquals(StatusCodeInterface::STATUS_OK, $response->getStatusCode(), $response->getBody()->getContents());
+        $this->assertEquals(StatusCodeInterface::STATUS_OK, $response->getStatusCode());
+
+        $body = $response->getBody();
+
+        if ($body instanceof VpackStream) {
+            $content = $body->vpack()->toJson();
+            $this->assertEquals($content, $body->getContents());
+        } else {
+            $content = $body->getContents();
+        }
+
+        $this->assertStringStartsWith('{"code":200,"doCompact":true,"error":false,', $content);
     }
 }

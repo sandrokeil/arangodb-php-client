@@ -14,6 +14,13 @@ use Psr\Http\Message\StreamInterface;
 class VpackStream implements StreamInterface
 {
     /**
+     * Is string a vpack binary
+     *
+     * @var bool
+     */
+    private $isVpack;
+
+    /**
      * Original data
      *
      * @var string|array
@@ -30,19 +37,19 @@ class VpackStream implements StreamInterface
     /**
      * @param string|array $data
      */
-    public function __construct($data)
+    public function __construct($data, bool $isVpack = false)
     {
         $this->data = $data;
+        $this->isVpack = $isVpack;
     }
 
     public function vpack(): \Velocypack\Vpack
     {
         if (is_string($this->data)) {
-            return \Velocypack\Vpack::fromJson($this->data);
+            return $this->isVpack ? \Velocypack\Vpack::fromBinary($this->data) : \Velocypack\Vpack::fromJson($this->data);
         }
         return \Velocypack\Vpack::fromArray($this->data);
     }
-
 
     public function __toString()
     {
@@ -130,7 +137,7 @@ class VpackStream implements StreamInterface
     public function getContents()
     {
         if (is_string($this->data)) {
-            return $this->data;
+            return $this->isVpack ? \Velocypack\Vpack::fromBinary($this->data)->toJson() : $this->data;
         }
         return json_encode($this->data);
     }
