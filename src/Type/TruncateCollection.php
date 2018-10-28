@@ -15,39 +15,22 @@ use ArangoDBClient\Urls;
 use Fig\Http\Message\RequestMethodInterface;
 use GuzzleHttp\Psr7\Request;
 use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\ResponseInterface;
 
-final class TruncateCollection implements Type
+final class TruncateCollection implements CollectionType
 {
-    use ToHttpTrait;
-
     /**
      * @var string
      */
     private $collectionName;
 
-    /**
-     * Inspects response
-     *
-     * @var callable
-     */
-    private $inspector;
-
-    private function __construct(string $collectionName, callable $inspector = null)
+    private function __construct(string $collectionName)
     {
         $this->collectionName = $collectionName;
-        $this->inspector = $inspector ?: function (ResponseInterface $response, string $rId = null) {
-            if ($rId) {
-                return null;
-            }
-
-            return strpos($response->getBody(), '"error":false') === false ? 422 : null;
-        };
     }
 
     /**
-     * @see https://docs.arangodb.com/3.2/HTTP/Collection/Creating.html#truncate-collection
-     * @see https://docs.arangodb.com/3.2/Manual/DataModeling/Collections/DatabaseMethods.html#truncate
+     * @see https://docs.arangodb.com/3.3/HTTP/Collection/Creating.html#truncate-collection
+     * @see https://docs.arangodb.com/3.3/Manual/DataModeling/Collections/DatabaseMethods.html#truncate
      *
      * @param string $collectionName
      * @return TruncateCollection
@@ -55,26 +38,6 @@ final class TruncateCollection implements Type
     public static function with(string $collectionName): TruncateCollection
     {
         return new self($collectionName);
-    }
-
-    /**
-     * @see https://docs.arangodb.com/3.2/HTTP/Collection/Creating.html#truncate-collection
-     * @see https://docs.arangodb.com/3.2/Manual/DataModeling/Collections/DatabaseMethods.html#truncate
-     *
-     * @param string $collectionName
-     * @param callable $inspector Inspects result, signature is (ResponseInterface $response, string $rId = null)
-     * @return TruncateCollection
-     */
-    public static function withInspector(
-        string $collectionName,
-        callable $inspector
-    ): TruncateCollection {
-        return new self($collectionName, $inspector);
-    }
-
-    public function checkResponse(ResponseInterface $response, string $rId = null): ?int
-    {
-        return ($this->inspector)($response, $rId);
     }
 
     public function collectionName(): string

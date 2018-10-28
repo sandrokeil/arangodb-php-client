@@ -12,12 +12,9 @@ declare(strict_types=1);
 namespace ArangoDb\Type;
 
 use ArangoDb\Exception\LogicException;
-use ArangoDBClient\HttpHelper;
-use ArangoDBClient\Urls;
 use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\ResponseInterface;
 
-final class UpdateDocumentByExample implements Type
+final class UpdateDocumentByExample implements CollectionType
 {
     /**
      * @var string
@@ -39,32 +36,21 @@ final class UpdateDocumentByExample implements Type
      */
     private $options;
 
-    /**
-     * Inspects response
-     *
-     * @var callable
-     */
-    private $inspector;
-
     private function __construct(
         string $collectionName,
         array $example,
         array $data,
-        array $options = [],
-        callable $inspector = null
+        array $options = []
     ) {
         $this->collectionName = $collectionName;
         $this->data = $data;
         $this->example = $example;
         $this->options = $options;
-        $this->inspector = $inspector ?: function (ResponseInterface $response, string $rId = null) {
-            return strpos($response->getBody(), '"' . $rId . '"' . ':0') !== false ? 404 : null;
-        };
     }
 
     /**
-     * @see https://docs.arangodb.com/3.2/HTTP/Document/WorkingWithDocuments.html#update-documents
-     * @see https://docs.arangodb.com/3.2/Manual/DataModeling/Documents/DocumentMethods.html#update-by-example
+     * @see https://docs.arangodb.com/3.3/HTTP/Document/WorkingWithDocuments.html#update-documents
+     * @see https://docs.arangodb.com/3.3/Manual/DataModeling/Documents/DocumentMethods.html#update-by-example
      *
      * @param string $collectionName
      * @param array $example
@@ -79,30 +65,6 @@ final class UpdateDocumentByExample implements Type
         array $options = []
     ): UpdateDocumentByExample {
         return new self($collectionName, $example, $data, $options);
-    }
-
-    /**
-     * @see https://docs.arangodb.com/3.2/HTTP/Document/WorkingWithDocuments.html#update-documents
-     * @see https://docs.arangodb.com/3.2/Manual/DataModeling/Documents/DocumentMethods.html#update-by-example
-     *
-     * @param string $collectionName
-     * @param array $example
-     * @param callable $inspector Inspects result, signature is (ResponseInterface $response, string $rId = null)
-     * @param array $options
-     * @return UpdateDocumentByExample
-     */
-    public static function withInspector(
-        string $collectionName,
-        array $example,
-        callable $inspector,
-        array $options = []
-    ): UpdateDocumentByExample {
-        return new self($collectionName, $example, $options, $inspector);
-    }
-
-    public function checkResponse(ResponseInterface $response, string $rId = null): ?int
-    {
-        return ($this->inspector)($response, $rId);
     }
 
     public function collectionName(): string

@@ -11,14 +11,16 @@ declare(strict_types=1);
 
 namespace ArangoDb\Type;
 
-use ArangoDBClient\HttpHelper;
+use ArangoDb\VpackStream;
 use ArangoDBClient\Urls;
+use Fig\Http\Message\RequestMethodInterface;
+use GuzzleHttp\Psr7\Request;
+use Iterator;
+use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
-final class InsertDocument implements Type
+final class InsertDocument implements CollectionType
 {
-    use ToHttpTrait;
-
     /**
      * @var string
      */
@@ -34,36 +36,16 @@ final class InsertDocument implements Type
      */
     private $options;
 
-    /**
-     * Inspects response
-     *
-     * @var callable
-     */
-    private $inspector;
-
-    private function __construct(
-        string $collectionName,
-        iterable $streamEvents,
-        array $options = [],
-        callable $inspector = null
-    ) {
+    private function __construct(string $collectionName, iterable $streamEvents, array $options = [])
+    {
         $this->collectionName = $collectionName;
         $this->streamEvents = $streamEvents;
         $this->options = $options;
-        $this->inspector = $inspector ?: function (ResponseInterface $response, string $rId = null) {
-            if (null === $rId) {
-                return null;
-            }
-
-            return strpos($response->getBody(), '"' . $rId . '"' . ':0') !== false
-                    || strpos($response->getBody(), '"' . $rId . '"' . ':[{"error":true') !== false
-                ? 404 : null;
-        };
     }
 
     /**
-     * @see https://docs.arangodb.com/3.2/Manual/DataModeling/Documents/DocumentMethods.html#insert
-     * @see https://docs.arangodb.com/3.2/HTTP/Document/WorkingWithDocuments.html#create-document
+     * @see https://docs.arangodb.com/3.3/Manual/DataModeling/Documents/DocumentMethods.html#insert
+     * @see https://docs.arangodb.com/3.3/HTTP/Document/WorkingWithDocuments.html#create-document
      *
      * @param string $collectionName
      * @param iterable $docs
@@ -73,25 +55,6 @@ final class InsertDocument implements Type
     public static function with(string $collectionName, iterable $docs, array $options = []): InsertDocument
     {
         return new self($collectionName, $docs, $options);
-    }
-
-    /**
-     * @see https://docs.arangodb.com/3.2/Manual/DataModeling/Documents/DocumentMethods.html#insert
-     * @see https://docs.arangodb.com/3.2/HTTP/Document/WorkingWithDocuments.html#create-document
-     *
-     * @param string $collectionName
-     * @param iterable $docs
-     * @param callable $inspector Inspects result, signature is (ResponseInterface $response, string $rId = null)
-     * @param array $options
-     * @return InsertDocument
-     */
-    public static function withInspector(
-        string $collectionName,
-        iterable $docs,
-        callable $inspector,
-        array $options = []
-    ): InsertDocument {
-        return new self($collectionName, $docs, $options, $inspector);
     }
 
     public function collectionName(): string
@@ -106,29 +69,29 @@ final class InsertDocument implements Type
 
     public function toRequest(): RequestInterface
     {
-        foreach ($this->streamEvents as $streamEvent) {
-            yield $this->buildAppendBatch(
-                HttpHelper::METHOD_POST,
-                Urls::URL_DOCUMENT . '/' . $this->collectionName,
-                $streamEvent,
-                $this->options
-            );
-        }
+        return new Request(
+            RequestMethodInterface::METHOD_POST,
+            Urls::URL_DOCUMENT . '/' . $this->collectionName . '/?' . http_build_query($this->options),
+            [],
+            new VpackStream($this->streamEvents)
+        );
     }
 
     public function toJs(): string
     {
-        if ($this->streamEvents instanceof JsonIterator) {
+        if (method_exists($this->streamEvents, 'asJson') === true) {
             return 'var rId = db.' . $this->collectionName
-                . '.insert(' . $this->streamEvents->asJson() . ', ' .  json_encode($this->options) . ');';
+                . '.insert(' . $this->streamEvents->asJson() . ', ' . json_encode($this->options) . ');';
         }
 
         return 'var rId = db.' . $this->collectionName
-            . '.insert(' . json_encode($this->streamEvents) . ', ' .  json_encode($this->options) . ');';
+            . '.insert(' . json_encode($this->streamEvents) . ', ' . json_encode($this->options) . ');';
     }
 
     public function count(): int
     {
-        return count($this->streamEvents);
+        return $this->streamEvents instanceof Iterator
+            ? iterator_count($this->streamEvents)
+            : count($this->streamEvents);
     }
 }

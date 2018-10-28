@@ -16,35 +16,28 @@ use Fig\Http\Message\RequestMethodInterface;
 use GuzzleHttp\Psr7\Request;
 use Psr\Http\Message\RequestInterface;
 
-final class ReadCollection implements CollectionType
+final class CountCollection implements CollectionType
 {
     /**
      * @var string
      */
     private $collectionName;
 
-    /**
-     * @var array
-     */
-    private $options;
-
-    private function __construct(string $collectionName, array $options)
+    private function __construct(string $collectionName)
     {
         $this->collectionName = $collectionName;
-        $this->options = $options;
     }
 
     /**
-     * @see https://docs.arangodb.com/3.3/HTTP/Collection/Getting.html#return-information-about-a-collection
-     * @see https://docs.arangodb.com/3.3/Manual/DataModeling/Collections/#collection
+     * @see https://docs.arangodb.com/3.3/HTTP/Collection/Getting.html#return-number-of-documents-in-a-collection
+     * @see https://docs.arangodb.com/3.3/Manual/DataModeling/Documents/DocumentMethods.html#count
      *
      * @param string $collectionName
-     * @param array $options
-     * @return ReadCollection
+     * @return CountCollection
      */
-    public static function with(string $collectionName, array $options = []): ReadCollection
+    public static function with(string $collectionName): CountCollection
     {
-        return new self($collectionName, $options);
+        return new self($collectionName);
     }
 
     public function collectionName(): string
@@ -55,13 +48,13 @@ final class ReadCollection implements CollectionType
     public function toRequest(): RequestInterface
     {
         return new Request(
-            RequestMethodInterface::METHOD_GET . '/?' . http_build_query($this->options),
-            Urls::URL_COLLECTION
+            RequestMethodInterface::METHOD_GET,
+            Urls::URL_COLLECTION . '/' . $this->collectionName . '/count'
         );
     }
 
     public function toJs(): string
     {
-        return 'var rId = db._collection("' . $this->collectionName . '");';
+        return 'var rId = db.' . $this->collectionName . '.count();';
     }
 }

@@ -16,12 +16,9 @@ use ArangoDBClient\Urls;
 use Fig\Http\Message\RequestMethodInterface;
 use GuzzleHttp\Psr7\Request;
 use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\ResponseInterface;
 
-class CreateDatabase implements Type
+final class CreateDatabase implements Type
 {
-    use ToHttpTrait;
-
     /**
      * @var string
      */
@@ -32,27 +29,14 @@ class CreateDatabase implements Type
      */
     private $options;
 
-    /**
-     * Inspects response
-     *
-     * @var callable
-     */
-    private $inspector;
-
-    private function __construct(
-        string $name,
-        array $options = [],
-        callable $inspector = null
-    ) {
+    private function __construct(string $name, array $options = [])
+    {
         $this->name = $name;
         $this->options = $options;
-        $this->inspector = $inspector ?: function (ResponseInterface $response, string $rId = null) {
-            return null;
-        };
     }
 
     /**
-     * @see https://docs.arangodb.com/3.2/HTTP/Database/DatabaseManagement.html#create-database
+     * @see https://docs.arangodb.com/3.3/HTTP/Database/DatabaseManagement.html#create-database
      *
      * @param string $databaseName
      * @param array $options
@@ -61,32 +45,6 @@ class CreateDatabase implements Type
     public static function with(string $databaseName, array $options = []): CreateDatabase
     {
         return new self($databaseName, $options);
-    }
-
-    /**
-     * @see https://docs.arangodb.com/3.2/HTTP/Database/DatabaseManagement.html#create-database
-     *
-     * @param string $databaseName
-     * @param callable $inspector Inspects result, signature is (ResponseInterface $response, string $rId = null)
-     * @param array $options
-     * @return CreateDatabase
-     */
-    public static function withInspector(
-        string $databaseName,
-        callable $inspector,
-        array $options = []
-    ): CreateDatabase {
-        return new self($databaseName, $options, $inspector);
-    }
-
-    public function checkResponse(ResponseInterface $response, string $rId = null): ?int
-    {
-        return ($this->inspector)($response, $rId);
-    }
-
-    public function collectionName(): string
-    {
-        throw new LogicException('Not possible at the moment, see ArangoDB docs');
     }
 
     public function toRequest(): RequestInterface

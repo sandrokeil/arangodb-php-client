@@ -16,12 +16,9 @@ use ArangoDBClient\Urls;
 use Fig\Http\Message\RequestMethodInterface;
 use GuzzleHttp\Psr7\Request;
 use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\ResponseInterface;
 
-final class DeleteCollection implements Type
+final class DeleteCollection implements CollectionType
 {
-    use ToHttpTrait;
-
     /**
      * @var string
      */
@@ -32,33 +29,15 @@ final class DeleteCollection implements Type
      */
     private $options;
 
-    /**
-     * Inspects response
-     *
-     * @var callable
-     */
-    private $inspector;
-
-    private function __construct(
-        string $collectionName,
-        array $options = [],
-        callable $inspector = null
-    ) {
-
+    private function __construct(string $collectionName, array $options = [])
+    {
         $this->collectionName = $collectionName;
         $this->options = $options;
-        $this->inspector = $inspector ?: function (ResponseInterface $response, string $rId = null) {
-            if ($rId) {
-                return null;
-            }
-
-            return strpos($response->getBody(), '"error":false') === false ? 422 : null;
-        };
     }
 
     /**
-     * @see https://docs.arangodb.com/3.2/HTTP/Collection/Creating.html#drops-a-collection
-     * @see https://docs.arangodb.com/3.2/Manual/DataModeling/Collections/CollectionMethods.html#drop
+     * @see https://docs.arangodb.com/3.3/HTTP/Collection/Creating.html#drops-a-collection
+     * @see https://docs.arangodb.com/3.3/Manual/DataModeling/Collections/CollectionMethods.html#drop
      *
      * @param string $collectionName
      * @param array $options
@@ -67,28 +46,6 @@ final class DeleteCollection implements Type
     public static function with(string $collectionName, array $options = []): DeleteCollection
     {
         return new self($collectionName, $options);
-    }
-
-    /**
-     * @see https://docs.arangodb.com/3.2/HTTP/Collection/Creating.html#drops-a-collection
-     * @see https://docs.arangodb.com/3.2/Manual/DataModeling/Collections/CollectionMethods.html#drop
-     *
-     * @param string $collectionName
-     * @param callable $inspector Inspects result, signature is (ResponseInterface $response, string $rId = null)
-     * @param array $options
-     * @return DeleteCollection
-     */
-    public static function withInspector(
-        string $collectionName,
-        callable $inspector,
-        array $options = []
-    ): DeleteCollection {
-        return new self($collectionName, $options, $inspector);
-    }
-
-    public function checkResponse(ResponseInterface $response, string $rId = null): ?int
-    {
-        return ($this->inspector)($response, $rId);
     }
 
     public function collectionName(): string

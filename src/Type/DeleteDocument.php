@@ -15,12 +15,9 @@ use ArangoDBClient\Urls;
 use Fig\Http\Message\RequestMethodInterface;
 use GuzzleHttp\Psr7\Request;
 use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\ResponseInterface;
 
-final class DeleteDocument implements Type
+final class DeleteDocument implements CollectionType
 {
-    use ToHttpTrait;
-
     /**
      * @var string
      */
@@ -36,36 +33,16 @@ final class DeleteDocument implements Type
      */
     private $options;
 
-    /**
-     * Inspects response
-     *
-     * @var callable
-     */
-    private $inspector;
-
-    private function __construct(
-        string $collectionName,
-        array $keys,
-        array $options = [],
-        callable $inspector = null
-    ) {
-
+    private function __construct(string $collectionName, array $keys, array $options = [])
+    {
         $this->collectionName = $collectionName;
         $this->keys = $keys;
         $this->options = $options;
-        $this->inspector = $inspector ?: function (ResponseInterface $response, string $rId = null) {
-            if ($rId) {
-                return null;
-            }
-
-            return strpos($response->getBody(), '"error":false') === false
-            && strpos($response->getBody(), '"_key":"') === false ? 422 : null;
-        };
     }
 
     /**
-     * @see https://docs.arangodb.com/3.2/HTTP/Document/WorkingWithDocuments.html#removes-multiple-documents
-     * @see https://docs.arangodb.com/3.2/Manual/DataModeling/Documents/DocumentMethods.html#remove-by-example
+     * @see https://docs.arangodb.com/3.3/HTTP/Document/WorkingWithDocuments.html#removes-multiple-documents
+     * @see https://docs.arangodb.com/3.3/Manual/DataModeling/Documents/DocumentMethods.html#remove-by-example
      *
      * @param string $collectionName
      * @param array $keys
@@ -77,30 +54,6 @@ final class DeleteDocument implements Type
         return new self($collectionName, $keys, $options);
     }
 
-    /**
-     * @see https://docs.arangodb.com/3.2/HTTP/Document/WorkingWithDocuments.html#removes-multiple-documents
-     * @see https://docs.arangodb.com/3.2/Manual/DataModeling/Documents/DocumentMethods.html#remove-by-example
-     *
-     * @param string $collectionName
-     * @param array $keys
-     * @param callable $inspector Inspects result, signature is (ResponseInterface $response, string $rId = null)
-     * @param array $options
-     * @return DeleteDocument
-     */
-    public static function withInspector(
-        string $collectionName,
-        array $keys,
-        callable $inspector,
-        array $options = []
-    ): DeleteDocument {
-        return new self($collectionName, $keys, $options, $inspector);
-    }
-
-    public function checkResponse(ResponseInterface $response, string $rId = null): ?int
-    {
-        return ($this->inspector)($response, $rId);
-    }
-
     public function collectionName(): string
     {
         return $this->collectionName;
@@ -110,7 +63,7 @@ final class DeleteDocument implements Type
     {
         return new Request(
             RequestMethodInterface::METHOD_DELETE,
-            Urls::URL_DOCUMENT . '/' . $this->collectionName .'/?' . http_build_query($this->options),
+            Urls::URL_DOCUMENT . '/' . $this->collectionName . '/?' . http_build_query($this->options),
             [],
             new VpackStream($this->keys)
         );
@@ -121,7 +74,7 @@ final class DeleteDocument implements Type
         $options = ! empty($this->options['waitForSync']) ? ', true' : ', false';
 
         if (! empty($this->options['limit'])) {
-            $options .= ', ' . (int) $this->options['limit'];
+            $options .= ', ' . (int)$this->options['limit'];
         }
 
         return 'var rId = db.' . $this->collectionName . '.removeByKeys(' . json_encode($this->keys) . $options . ');';

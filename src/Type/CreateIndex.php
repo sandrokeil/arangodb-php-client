@@ -16,12 +16,9 @@ use ArangoDBClient\Urls;
 use Fig\Http\Message\RequestMethodInterface;
 use GuzzleHttp\Psr7\Request;
 use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\ResponseInterface;
 
-class CreateIndex implements Type
+final class CreateIndex implements CollectionType
 {
-    use ToHttpTrait;
-
     /**
      * @var string
      */
@@ -32,32 +29,15 @@ class CreateIndex implements Type
      */
     private $options;
 
-    /**
-     * Inspects response
-     *
-     * @var callable
-     */
-    private $inspector;
-
-    private function __construct(
-        string $collectionName,
-        array $options,
-        callable $inspector = null
-    ) {
+    private function __construct(string $collectionName, array $options)
+    {
         $this->collectionName = $collectionName;
         $this->options = $options;
-        $this->inspector = $inspector ?: function (ResponseInterface $response, string $rId = null) {
-            if ($rId) {
-                return null;
-            }
-
-            return strpos($response->getBody(), '"error":false') === false ? 422 : null;
-        };
     }
 
     /**
-     * @see https://docs.arangodb.com/3.2/HTTP/Indexes/WorkingWith.html#create-index
-     * @see https://docs.arangodb.com/3.2/Manual/Indexing/WorkingWithIndexes.html#creating-an-index
+     * @see https://docs.arangodb.com/3.3/HTTP/Indexes/WorkingWith.html#create-index
+     * @see https://docs.arangodb.com/3.3/Manual/Indexing/WorkingWithIndexes.html#creating-an-index
      *
      * @param string $collectionName
      * @param array $options
@@ -66,28 +46,6 @@ class CreateIndex implements Type
     public static function with(string $collectionName, array $options = []): CreateIndex
     {
         return new self($collectionName, $options);
-    }
-
-    /**
-     * @see https://docs.arangodb.com/3.2/HTTP/Indexes/WorkingWith.html#create-index
-     * @see https://docs.arangodb.com/3.2/Manual/Indexing/WorkingWithIndexes.html#creating-an-index
-     *
-     * @param string $collectionName
-     * @param callable $inspector Inspects result, signature is (ResponseInterface $response, string $rId = null)
-     * @param array $options
-     * @return CreateIndex
-     */
-    public static function withInspector(
-        string $collectionName,
-        callable $inspector,
-        array $options = []
-    ): CreateIndex {
-        return new self($collectionName, $options, $inspector);
-    }
-
-    public function checkResponse(ResponseInterface $response, string $rId = null): ?int
-    {
-        return ($this->inspector)($response, $rId);
     }
 
     public function collectionName(): string

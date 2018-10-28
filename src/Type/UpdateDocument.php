@@ -15,12 +15,9 @@ use ArangoDBClient\Urls;
 use Fig\Http\Message\RequestMethodInterface;
 use GuzzleHttp\Psr7\Request;
 use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\ResponseInterface;
 
-final class UpdateDocument implements Type
+final class UpdateDocument implements CollectionType
 {
-    use ToHttpTrait;
-
     /**
      * @var string
      */
@@ -41,37 +38,17 @@ final class UpdateDocument implements Type
      */
     private $options;
 
-    /**
-     * Inspects response
-     *
-     * @var callable
-     */
-    private $inspector;
-
-    private function __construct(
-        string $collectionName,
-        string $id,
-        array $data,
-        array $options = [],
-        callable $inspector = null
-    ) {
+    private function __construct(string $collectionName, string $id, array $data, array $options = [])
+    {
         $this->collectionName = $collectionName;
         $this->data = $data;
         $this->id = $id;
         $this->options = $options;
-        $this->inspector = $inspector ?: function (ResponseInterface $response, string $rId = null) {
-            if ($rId) {
-                return null;
-            }
-
-            return strpos($response->getBody(), '"error":false') === false
-            && strpos($response->getBody(), '"_key":"') === false ? 422 : null;
-        };
     }
 
     /**
-     * @see https://docs.arangodb.com/3.2/HTTP/Document/WorkingWithDocuments.html#update-document
-     * @see https://docs.arangodb.com/3.2/Manual/DataModeling/Documents/DocumentMethods.html#update
+     * @see https://docs.arangodb.com/3.3/HTTP/Document/WorkingWithDocuments.html#update-document
+     * @see https://docs.arangodb.com/3.3/Manual/DataModeling/Documents/DocumentMethods.html#update
      *
      * @param string $collectionName
      * @param string $id
@@ -84,30 +61,6 @@ final class UpdateDocument implements Type
         return new self($collectionName, $id, $data, $options);
     }
 
-    /**
-     * @see https://docs.arangodb.com/3.2/HTTP/Document/WorkingWithDocuments.html#update-document
-     * @see https://docs.arangodb.com/3.2/Manual/DataModeling/Documents/DocumentMethods.html#update
-     *
-     * @param string $collectionName
-     * @param string $id
-     * @param callable $inspector Inspects result, signature is (ResponseInterface $response, string $rId = null)
-     * @param array $options
-     * @return UpdateDocument
-     */
-    public static function withInspector(
-        string $collectionName,
-        string $id,
-        callable $inspector,
-        array $options = []
-    ): UpdateDocument {
-        return new self($collectionName, $id, $options, $inspector);
-    }
-
-    public function checkResponse(ResponseInterface $response, string $rId = null): ?int
-    {
-        return ($this->inspector)($response, $rId);
-    }
-
     public function collectionName(): string
     {
         return $this->collectionName;
@@ -117,7 +70,7 @@ final class UpdateDocument implements Type
     {
         return new Request(
             RequestMethodInterface::METHOD_PATCH,
-            Urls::URL_DOCUMENT . '/' . $this->collectionName . '/?' . http_build_query($this->options),
+            Urls::URL_DOCUMENT . '/' . $this->collectionName . '/' . $this->id . '?' . http_build_query($this->options),
             [],
             new VpackStream($this->data)
         );

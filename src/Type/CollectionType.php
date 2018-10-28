@@ -6,19 +6,12 @@
  * @copyright Copyright (c) 2018 Sandro Keil
  * @license   http://github.com/sandrokeil/arangodb-php-client/blob/master/LICENSE.md New BSD License
  */
+
 declare(strict_types=1);
 
 namespace ArangoDb\Type;
 
-interface HasResponse
+interface CollectionType extends Type
 {
-    /**
-     * @return string
-     */
-    public function rawResult(): ?string;
-
-    /**
-     * @return mixed
-     */
-    public function result();
+    public function collectionName(): string;
 }

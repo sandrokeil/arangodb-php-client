@@ -12,15 +12,10 @@ declare(strict_types=1);
 namespace ArangoDb\Type;
 
 use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\ResponseInterface;
 
 interface Type
 {
     public function toRequest(): RequestInterface;
 
     public function toJs(): string;
-
-    public function collectionName(): string;
-
-    public function checkResponse(ResponseInterface $response, string $rId = null): ?int;
 }

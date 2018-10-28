@@ -15,12 +15,9 @@ use ArangoDBClient\Urls;
 use Fig\Http\Message\RequestMethodInterface;
 use GuzzleHttp\Psr7\Request;
 use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\ResponseInterface;
 
-final class DeleteDocumentByExample implements Type
+final class DeleteDocumentByExample implements CollectionType
 {
-    use ToHttpTrait;
-
     /**
      * @var string
      */
@@ -36,35 +33,17 @@ final class DeleteDocumentByExample implements Type
      */
     private $options;
 
-    /**
-     * Inspects response
-     *
-     * @var callable
-     */
-    private $inspector;
-
-    private function __construct(
-        string $collectionName,
-        array $example,
-        array $options = [],
-        callable $inspector = null
-    ) {
+    private function __construct(string $collectionName, array $example, array $options = [])
+    {
 
         $this->collectionName = $collectionName;
         $this->example = $example;
         $this->options = $options;
-        $this->inspector = $inspector ?: function (ResponseInterface $response, string $rId = null) {
-            if ($rId) {
-                return null;
-            }
-
-            return strpos($response->getBody(), '"deleted":0') !== false ? 404 : null;
-        };
     }
 
     /**
-     * @see https://docs.arangodb.com/3.2/HTTP/Document/WorkingWithDocuments.html#removes-multiple-documents
-     * @see https://docs.arangodb.com/3.2/Manual/DataModeling/Documents/DocumentMethods.html#remove-by-example
+     * @see https://docs.arangodb.com/3.3/HTTP/Document/WorkingWithDocuments.html#removes-multiple-documents
+     * @see https://docs.arangodb.com/3.3/Manual/DataModeling/Documents/DocumentMethods.html#remove-by-example
      *
      * @param string $collectionName
      * @param array $example
@@ -74,30 +53,6 @@ final class DeleteDocumentByExample implements Type
     public static function with(string $collectionName, array $example, array $options = []): DeleteDocumentByExample
     {
         return new self($collectionName, $example, $options);
-    }
-
-    /**
-     * @see https://docs.arangodb.com/3.2/HTTP/Document/WorkingWithDocuments.html#removes-multiple-documents
-     * @see https://docs.arangodb.com/3.2/Manual/DataModeling/Documents/DocumentMethods.html#remove-by-example
-     *
-     * @param string $collectionName
-     * @param array $example
-     * @param callable $inspector Inspects result, signature is (ResponseInterface $response, string $rId = null)
-     * @param array $options
-     * @return DeleteDocumentByExample
-     */
-    public static function withInspector(
-        string $collectionName,
-        array $example,
-        callable $inspector,
-        array $options = []
-    ): DeleteDocumentByExample {
-        return new self($collectionName, $example, $options, $inspector);
-    }
-
-    public function checkResponse(ResponseInterface $response, string $rId = null): ?int
-    {
-        return ($this->inspector)($response, $rId);
     }
 
     public function collectionName(): string
@@ -125,7 +80,7 @@ final class DeleteDocumentByExample implements Type
         $options = ! empty($this->options['waitForSync']) ? ', true' : ', false';
 
         if (! empty($this->options['limit'])) {
-            $options .= ', ' . (int) $this->options['limit'];
+            $options .= ', ' . (int)$this->options['limit'];
         }
 
         return 'var rId = db.' . $this->collectionName . '.removeByExample('
