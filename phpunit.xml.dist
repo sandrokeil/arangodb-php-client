@@ -17,6 +17,6 @@
 
     <php>
         <env name="arangodb_host" value="tcp://arangodb:8529" />
-        <env name="arangodb_dbname" value="_system" />
+        <env name="arangodb_dbname" value="testing" />
     </php>
 </phpunit>

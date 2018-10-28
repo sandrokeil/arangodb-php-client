@@ -231,11 +231,8 @@ class Client implements \Psr\Http\Client\ClientInterface
                 . HttpHelper::EOL;
         }
 
-        if ($this->database === '') {
-            $this->baseUrl = '/_db/_system';
-        } else {
-            $this->baseUrl = '/_db/' . urlencode($this->database);
-        }
+        $this->database = $this->options[ConnectionOptions::OPTION_DATABASE];
+        $this->baseUrl = '/_db/' . urlencode($this->database);
     }
 
     /**

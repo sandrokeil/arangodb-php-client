@@ -12,6 +12,8 @@ declare(strict_types=1);
 namespace ArangoDbTest;
 
 use ArangoDb\Client;
+use ArangoDb\Type\CreateDatabase;
+use ArangoDb\Type\DeleteDatabase;
 use ArangoDBClient\ConnectionOptions;
 use Psr\Http\Client\ClientInterface;
 
@@ -29,6 +31,48 @@ final class TestUtil
                 'Accept' => [$type],
             ]
         );
+    }
+
+    public static function createDatabase(): void
+    {
+        $type = 'application/json';
+        $params = self::getConnectionParams();
+
+        if ($params[ConnectionOptions::OPTION_DATABASE] === '_system') {
+            throw new \RuntimeException('"_system" database can not be created. Choose another database for tests.');
+        }
+
+        $params[ConnectionOptions::OPTION_DATABASE] = '_system';
+
+        $client = new Client(
+            $params,
+            [
+                'Content-Type' => [$type],
+                'Accept' => [$type],
+            ]
+        );
+        $client->sendRequest(CreateDatabase::with(self::getDatabaseName())->toRequest());
+    }
+
+    public static function dropDatabase(): void
+    {
+        $type = 'application/json';
+        $params = self::getConnectionParams();
+
+        if ($params[ConnectionOptions::OPTION_DATABASE] === '_system') {
+            throw new \RuntimeException('"_system" database can not be dropped. Choose another database for tests.');
+        }
+
+        $params[ConnectionOptions::OPTION_DATABASE] = '_system';
+
+        $client = new Client(
+            $params,
+            [
+                'Content-Type' => [$type],
+                'Accept' => [$type],
+            ]
+        );
+        $client->sendRequest(DeleteDatabase::with(self::getDatabaseName())->toRequest());
     }
 
     public static function getDatabaseName(): string

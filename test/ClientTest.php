@@ -13,6 +13,8 @@ namespace ArangoDbTest;
 
 use ArangoDb\Client;
 use ArangoDb\Type\CreateCollection;
+use ArangoDb\Type\CreateDatabase;
+use ArangoDb\Type\DeleteDatabase;
 use Fig\Http\Message\StatusCodeInterface;
 use PHPUnit\Framework\TestCase;
 
@@ -23,16 +25,25 @@ class ClientTest extends TestCase
      */
     private $client;
 
+    public static function setUpBeforeClass()
+    {
+        TestUtil::createDatabase();
+    }
+
+    public static function tearDownAfterClass()
+    {
+        TestUtil::dropDatabase();
+    }
+
     protected function setUp()
     {
-        parent::setUp();
         $this->client = TestUtil::getClient(class_exists('Velocypack\Vpack'));
     }
 
     /**
      * @test
      */
-    public function it_create_collection(): void
+    public function it_creates_collection(): void
     {
         $createCollection = CreateCollection::with('myCol');
         $response = $this->client->sendRequest($createCollection->toRequest());

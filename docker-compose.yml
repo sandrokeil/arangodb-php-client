@@ -9,7 +9,7 @@ services:
       arangodb_host: "tcp://arangodb:8529"
       arangodb_username: ""
       arangodb_password: ""
-      arangodb_dbname: _system
+      arangodb_dbname: testing
     volumes:
       - "./:/app"
 
@@ -25,7 +25,7 @@ services:
       arangodb_host: "tcp://arangodb:8529"
       arangodb_username: ""
       arangodb_password: ""
-      arangodb_dbname: _system
+      arangodb_dbname: testing
     volumes:
       - "./:/app"
 
