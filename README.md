@@ -3,7 +3,9 @@
 [![Build Status](https://travis-ci.org/sandrokeil/arangodb-php-client.svg?branch=master)](https://travis-ci.org/sandrokeil/arangodb-php-client)
 [![Coverage Status](https://coveralls.io/repos/sandrokeil/arangodb-php-client/badge.svg?branch=master&service=github)](https://coveralls.io/github/sandrokeil/arangodb-php-client?branch=master)
 
-[ArangoDB](https://arangodb.com/) PHP PSR 7/18 client implementation
+[ArangoDB](https://arangodb.com/ "native multi-model database") PHP PSR 7/18 client implementation with
+[Velcoypack](https://github.com/arangodb/velocypack "a fast and compact format for serialization and storage") support
+via [martin-schilling/php-velocypack](https://github.com/martin-schilling/php-velocypack/).
 
 ## Requirements
 
@@ -33,5 +35,11 @@ Execute tests with
 
 ```
 $ docker-compose run --rm php vendor/bin/phpunit
+```
+
+Execute Velocypack tests with
+
+```
+$ docker-compose run --rm vpack vendor/bin/phpunit
 ```
 
