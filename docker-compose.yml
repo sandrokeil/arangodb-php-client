@@ -13,6 +13,22 @@ services:
     volumes:
       - "./:/app"
 
+  # To run tests docker-compose run --rm vpack vendor/bin/phpunit
+  vpack:
+    image: vpack
+    build:
+      context: ./env
+      dockerfile: Dockerfile
+    environment:
+      PHP_IDE_CONFIG: "serverName=application"
+      XDEBUG_CONFIG: "remote_host=phpstorm"
+      arangodb_host: "tcp://arangodb:8529"
+      arangodb_username: ""
+      arangodb_password: ""
+      arangodb_dbname: _system
+    volumes:
+      - "./:/app"
+
   arangodb:
     image: arangodb/arangodb:3.3.19
     ports:

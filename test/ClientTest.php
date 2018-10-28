@@ -26,7 +26,7 @@ class ClientTest extends TestCase
     protected function setUp()
     {
         parent::setUp();
-        $this->client = TestUtil::getClient();
+        $this->client = TestUtil::getClient(class_exists('Velocypack\Vpack'));
     }
 
     /**
