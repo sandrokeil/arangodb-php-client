@@ -54,7 +54,9 @@ final class VpackStream implements StreamInterface
             return $this->data;
         }
         if (is_string($this->data)) {
-            $this->data = $this->isVpack ? \Velocypack\Vpack::fromBinary($this->data) : \Velocypack\Vpack::fromJson($this->data);
+            $this->data = $this->isVpack
+                ? \Velocypack\Vpack::fromBinary($this->data)
+                : \Velocypack\Vpack::fromJson($this->data);
         } else {
             $this->data = \Velocypack\Vpack::fromArray($this->data);
         }
