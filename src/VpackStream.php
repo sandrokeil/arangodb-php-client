@@ -23,7 +23,7 @@ class VpackStream implements StreamInterface
     /**
      * Original data
      *
-     * @var string|array
+     * @var string|array|\Velocypack\Vpack
      */
     private $data;
 
@@ -45,10 +45,15 @@ class VpackStream implements StreamInterface
 
     public function vpack(): \Velocypack\Vpack
     {
-        if (is_string($this->data)) {
-            return $this->isVpack ? \Velocypack\Vpack::fromBinary($this->data) : \Velocypack\Vpack::fromJson($this->data);
+        if ($this->data instanceof \Velocypack\Vpack) {
+            return $this->data;
         }
-        return \Velocypack\Vpack::fromArray($this->data);
+        if (is_string($this->data)) {
+            $this->data = $this->isVpack ? \Velocypack\Vpack::fromBinary($this->data) : \Velocypack\Vpack::fromJson($this->data);
+        } else {
+            $this->data = \Velocypack\Vpack::fromArray($this->data);
+        }
+        return $this->data;
     }
 
     public function __toString()
@@ -59,6 +64,7 @@ class VpackStream implements StreamInterface
     public function close()
     {
         $this->data = '';
+        $this->buffer = null;
     }
 
     public function detach()
@@ -68,7 +74,7 @@ class VpackStream implements StreamInterface
 
     public function getSize()
     {
-        return strlen($this->__toString());
+        return strlen($this->getContents());
     }
 
     public function tell()
@@ -81,7 +87,7 @@ class VpackStream implements StreamInterface
         if ($this->buffer === null) {
             return false;
         }
-        return strlen($this->buffer) === 0;
+        return $this->buffer === '';
     }
 
     public function isSeekable()
@@ -117,7 +123,7 @@ class VpackStream implements StreamInterface
     public function read($length)
     {
         if ($this->buffer === null) {
-            $this->buffer = $this->__toString();
+            $this->buffer = $this->getContents();
         }
         $currentLength = strlen($this->buffer);
 
@@ -136,10 +142,19 @@ class VpackStream implements StreamInterface
 
     public function getContents()
     {
-        if (is_string($this->data)) {
-            return $this->isVpack ? \Velocypack\Vpack::fromBinary($this->data)->toJson() : $this->data;
+        if ($this->data instanceof \Velocypack\Vpack) {
+            return $this->data->toJson();
         }
-        return json_encode($this->data);
+
+        if ($this->isVpack === true && is_string($this->data)) {
+            $this->data = \Velocypack\Vpack::fromBinary($this->data);
+            return $this->data->toJson();
+        }
+
+        if (! is_string($this->data)) {
+            $this->data = json_encode($this->data);
+        }
+        return $this->data;
     }
 
     public function getMetadata($key = null)

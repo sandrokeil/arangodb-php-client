@@ -58,6 +58,6 @@ class ClientTest extends TestCase
             $content = $body->getContents();
         }
 
-        $this->assertStringStartsWith('{"code":200,"doCompact":true,"error":false,', $content);
+        $this->assertStringStartsWith('{"code":200,', $content);
     }
 }
