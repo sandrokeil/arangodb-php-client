@@ -22,7 +22,7 @@ use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Throwable;
 
-class Client implements \Psr\Http\Client\ClientInterface
+final class Client implements \Psr\Http\Client\ClientInterface
 {
     /**
      * Connection handle, used in case of keep-alive

@@ -11,7 +11,7 @@ namespace ArangoDb;
 
 use Psr\Http\Message\StreamInterface;
 
-class VpackStream implements StreamInterface
+final class VpackStream implements StreamInterface
 {
     /**
      * Is string a vpack binary
@@ -33,6 +33,11 @@ class VpackStream implements StreamInterface
      * @var string
      */
     private $buffer;
+
+    /**
+     * @var int
+     */
+    private $size;
 
     /**
      * @param string|array $data
@@ -74,7 +79,11 @@ class VpackStream implements StreamInterface
 
     public function getSize()
     {
-        return strlen($this->getContents());
+        if ($this->size === null) {
+            $this->size = strlen($this->getContents());
+        }
+
+        return $this->size;
     }
 
     public function tell()
@@ -102,7 +111,7 @@ class VpackStream implements StreamInterface
 
     public function rewind()
     {
-        $this->seek(0);
+        $this->buffer = null;
     }
 
     public function isWritable()
@@ -159,8 +168,21 @@ class VpackStream implements StreamInterface
 
     public function getMetadata($key = null)
     {
-        return [
-            'vpack' => true,
+        $metadata = [
+            'wrapper_data' => ['string'],
+            'wrapper_type' => 'string',
+            'stream_type' => 'string',
+            'mode' => 'r',
+            'unread_bytes' => $this->getSize() - strlen($this->buffer ?? ''),
+            'seekable' => $this->isSeekable(),
+            'timeout' => false,
+            'blocked' => false,
+            'eof' => $this->eof()
         ];
+
+        if ($key === null) {
+            return $metadata;
+        }
+        return $metadata[$key] ?? null;
     }
 }
