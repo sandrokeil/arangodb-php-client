@@ -107,25 +107,35 @@ class Client implements \Psr\Http\Client\ClientInterface
      */
     public function sendRequest(RequestInterface $request): ResponseInterface
     {
-        $body = $request->getBody()->getContents();
+        $body = $request->getBody();
         $method = $request->getMethod();
 
         $customHeaders = array_merge($this->defaultHeaders, $request->getHeaders());
-        unset($customHeaders['Connection']);
+        unset($customHeaders['Connection'], $customHeaders['Content-Length']);
 
         if (! isset($customHeaders['Content-Type'])) {
             $customHeaders['Content-Type'] = ['application/json'];
         }
-        if (! isset($customHeaders['Content-Length'])) {
-            $customHeaders['Content-Length'] = [strlen($body)];
-        }
+
+        $useVpack = false;
 
         $customHeader = '';
         foreach ($customHeaders as $headerKey => $headerValues) {
             foreach ($headerValues as $headerValue) {
+                if ($headerKey === 'Content-Type' && $headerValue === 'application/x-velocypack') {
+                    $useVpack = true;
+                }
                 $customHeader .= $headerKey . ': ' . $headerValue . HttpHelper::EOL;
             }
         }
+
+        if ($useVpack === true && $body instanceof VpackStream) {
+            $body = $body->vpack()->toBinary();
+        } else {
+            $body = $body->getContents();
+        }
+
+        $customHeader .= 'Content-Length: ' . strlen($body) . HttpHelper::EOL;
 
         $url = $this->baseUrl . $request->getUri()->getPath();
 

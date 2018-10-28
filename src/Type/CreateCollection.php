@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace ArangoDb\Type;
 
+use ArangoDb\VpackStream;
 use ArangoDBClient\HttpHelper;
 use ArangoDBClient\Urls;
 use GuzzleHttp\Psr7\Request;
@@ -101,7 +102,7 @@ class CreateCollection implements Type
             HttpHelper::METHOD_POST,
             Urls::URL_COLLECTION,
             [],
-            json_encode($options) // TODO how to handle vpack, __toString useful ?
+            new VpackStream($options)
         );
     }
 
