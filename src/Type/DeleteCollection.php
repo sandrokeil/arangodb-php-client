@@ -11,8 +11,10 @@ declare(strict_types=1);
 
 namespace ArangoDb\Type;
 
-use ArangoDBClient\HttpHelper;
+use ArangoDb\VpackStream;
 use ArangoDBClient\Urls;
+use Fig\Http\Message\RequestMethodInterface;
+use GuzzleHttp\Psr7\Request;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
@@ -96,10 +98,11 @@ final class DeleteCollection implements Type
 
     public function toRequest(): RequestInterface
     {
-        return $this->buildAppendBatch(
-            HttpHelper::METHOD_DELETE,
+        return new Request(
+            RequestMethodInterface::METHOD_DELETE,
             Urls::URL_COLLECTION . '/' . $this->collectionName,
-            $this->options
+            [],
+            new VpackStream($this->options)
         );
     }
 

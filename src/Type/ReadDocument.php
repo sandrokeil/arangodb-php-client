@@ -11,8 +11,9 @@ declare(strict_types=1);
 
 namespace ArangoDb\Type;
 
-use ArangoDBClient\HttpHelper;
 use ArangoDBClient\Urls;
+use Fig\Http\Message\RequestMethodInterface;
+use GuzzleHttp\Psr7\Request;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
@@ -98,10 +99,9 @@ final class ReadDocument implements Type, HasResponse
 
     public function toRequest(): RequestInterface
     {
-        return $this->buildAppendBatch(
-            HttpHelper::METHOD_GET,
-            Urls::URL_DOCUMENT . '/' . $this->collectionName . '/' . $this->id,
-            []
+        return new Request(
+            RequestMethodInterface::METHOD_GET,
+            Urls::URL_DOCUMENT . '/' . $this->collectionName . '/' . $this->id
         );
     }
 

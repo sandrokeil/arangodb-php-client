@@ -12,8 +12,8 @@ declare(strict_types=1);
 namespace ArangoDb\Type;
 
 use ArangoDb\VpackStream;
-use ArangoDBClient\HttpHelper;
 use ArangoDBClient\Urls;
+use Fig\Http\Message\RequestMethodInterface;
 use GuzzleHttp\Psr7\Request;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -99,7 +99,7 @@ class CreateCollection implements Type
         $options['name'] = $this->name;
 
         return new Request(
-            HttpHelper::METHOD_POST,
+            RequestMethodInterface::METHOD_POST,
             Urls::URL_COLLECTION,
             [],
             new VpackStream($options)

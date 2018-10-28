@@ -11,8 +11,9 @@ declare(strict_types=1);
 
 namespace ArangoDb\Type;
 
-use ArangoDBClient\HttpHelper;
 use ArangoDBClient\Urls;
+use Fig\Http\Message\RequestMethodInterface;
+use GuzzleHttp\Psr7\Request;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
@@ -83,10 +84,9 @@ final class TruncateCollection implements Type
 
     public function toRequest(): RequestInterface
     {
-        return $this->buildAppendBatch(
-            HttpHelper::METHOD_PUT,
-            Urls::URL_COLLECTION . '/' . $this->collectionName . '/truncate',
-            []
+        return new Request(
+            RequestMethodInterface::METHOD_PUT,
+            Urls::URL_COLLECTION . '/' . $this->collectionName . '/truncate'
         );
     }
 

@@ -11,8 +11,9 @@ declare(strict_types=1);
 
 namespace ArangoDb\Type;
 
-use ArangoDBClient\HttpHelper;
+use ArangoDb\VpackStream;
 use ArangoDBClient\Urls;
+use Fig\Http\Message\RequestMethodInterface;
 use GuzzleHttp\Psr7\Request;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -97,10 +98,10 @@ class CreateIndex implements Type
     public function toRequest(): RequestInterface
     {
         return new Request(
-            HttpHelper::METHOD_POST,
-            Urls::URL_INDEX . http_build_query(['collection' => $this->collectionName]),
+            RequestMethodInterface::METHOD_POST,
+            Urls::URL_INDEX . '/?' . http_build_query(['collection' => $this->collectionName]),
             [],
-            json_encode($this->options) // TODO how to handle vpack, __toString useful ?
+            new VpackStream($this->options)
         );
     }
 

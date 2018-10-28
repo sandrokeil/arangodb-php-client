@@ -11,8 +11,8 @@ declare(strict_types=1);
 
 namespace ArangoDb\Type;
 
-use ArangoDBClient\HttpHelper;
 use ArangoDBClient\Urls;
+use Fig\Http\Message\RequestMethodInterface;
 use GuzzleHttp\Psr7\Request;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -93,7 +93,7 @@ final class ReadCollection implements Type, HasResponse
     public function toRequest(): RequestInterface
     {
         return new Request(
-            HttpHelper::METHOD_POST,
+            RequestMethodInterface::METHOD_POST,
             Urls::URL_COLLECTION
         );
     }
