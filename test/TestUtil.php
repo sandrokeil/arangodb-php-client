@@ -19,9 +19,9 @@ use Psr\Http\Client\ClientInterface;
 
 final class TestUtil
 {
-    public static function getClient($useVelocypack = false): ClientInterface
+    public static function getClient(): ClientInterface
     {
-        $type = 'application/' . ($useVelocypack ? 'x-velocypack' : 'json');
+        $type = 'application/' . (getenv('USE_VPACK') === 'true' ? 'x-velocypack' : 'json');
         $params = self::getConnectionParams();
 
         return new Client(
@@ -35,7 +35,7 @@ final class TestUtil
 
     public static function createDatabase(): void
     {
-        $type = 'application/json';
+        $type = 'application/' . (getenv('USE_VPACK') === 'true' ? 'x-velocypack' : 'json');
         $params = self::getConnectionParams();
 
         if ($params[ConnectionOptions::OPTION_DATABASE] === '_system') {

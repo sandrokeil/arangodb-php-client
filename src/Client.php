@@ -16,7 +16,8 @@ use ArangoDBClient\ConnectionOptions;
 use ArangoDBClient\Endpoint;
 use ArangoDBClient\FailoverException;
 use ArangoDBClient\HttpHelper;
-use ArangoDBClient\HttpResponse;
+use ArangoDBClient\ServerException;
+use Fig\Http\Message\StatusCodeInterface;
 use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -24,6 +25,11 @@ use Throwable;
 
 final class Client implements \Psr\Http\Client\ClientInterface
 {
+    /**
+     * HTTP leader endpoint header, used in failover
+     */
+    public const HEADER_LEADER_ENDPOINT = 'x-arango-endpoint';
+
     /**
      * Connection handle, used in case of keep-alive
      *
@@ -181,17 +187,88 @@ final class Client implements \Psr\Http\Client\ClientInterface
                 // must close the connection
                 fclose($handle);
             }
-
-            $response = new HttpResponse($result, $url, $method, false);
+            [$header, $body] = HttpHelper::parseHttpMessage($result, $url, $method);
+            [$httpCode, $result, $headers] = HttpHelper::parseHeaders($header);
         } catch (Throwable $e) {
             throw new \ArangoDBClient\ServerException($e->getCode(), $e->getMessage(), $e);
         }
 
+        $this->checkResponse($httpCode, $body, $result, $headers);
+
         return new Response(
-            $response->getHttpCode(),
-            $response->getHeaders(),
-            $useVpack ? new VpackStream($response->getBody(), true) : $response->getBody()
+            $httpCode,
+            $headers,
+            $useVpack ? new VpackStream($body, true) : $body
         );
+    }
+
+    /**
+     * Parse the response for errors
+     *
+     * @param int $httpCode
+     * @param string $body
+     * @param string $result
+     * @param array $headers
+     * @throws ClientException
+     * @throws FailoverException
+     * @throws ServerException
+     */
+    private function checkResponse(int $httpCode, string $body, string $result, array $headers): void
+    {
+        if ($httpCode < StatusCodeInterface::STATUS_OK || $httpCode >= StatusCodeInterface::STATUS_BAD_REQUEST) {
+            // failure on server
+            if ($body !== '') {
+                // check if we can find details in the response body
+                $details = json_decode($body, true);
+
+                // handle failover
+                if ($details !== null && isset($details['errorNum'])) {
+                    if ($details['errorNum'] === 1495) {
+                        // 1495 = leadership challenge is ongoing
+                        $exception = new FailoverException(@$details['errorMessage'], @$details['code']);
+                        throw $exception;
+                    }
+
+                    if ($details['errorNum'] === 1496) {
+                        // 1496 = not a leader
+                        // not a leader. now try to find new leader
+                        $leader = $headers[self::HEADER_LEADER_ENDPOINT] ?? '';
+                        if ($leader) {
+                            // have a different leader
+                            $leader = Endpoint::normalize($leader);
+                            $this->options->addEndpoint($leader);
+                        } else {
+                            $leader = $this->options->nextEndpoint();
+                        }
+
+                        // close existing connection
+                        $this->closeHandle();
+                        $this->updateHttpHeader();
+
+                        $exception = new FailoverException($details['errorMessage'] ?? '', $details['code'] ?? '');
+                        $exception->setLeader($leader);
+                        throw $exception;
+                    }
+
+                    if (isset($details['errorMessage'])) {
+                        // yes, we got details
+                        $exception = new ServerException($details['errorMessage'], $details['code']);
+                        $exception->setDetails($details);
+                        throw $exception;
+                    }
+                }
+            }
+
+            // check if server has responded with any other 503 response not handled above
+            if ($httpCode === 503) {
+                // generic service unavailable response
+                $exception = new FailoverException('service unavailable', 503);
+                throw $exception;
+            }
+
+            // no details found, throw normal exception
+            throw new ServerException($result, $httpCode);
+        }
     }
 
     /**

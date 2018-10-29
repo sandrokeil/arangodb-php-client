@@ -3,46 +3,77 @@ language: php
 matrix:
   fast_finish: true
   include:
-    - php: 7.1
-      env:
-        - DEPENDENCIES=""
-        - EXECUTE_CS_CHECK=true
-        - ARANGODB_VERSION=3.3.19
-    - php: 7.1
-      env:
-        - DEPENDENCIES="--prefer-lowest --prefer-stable"
-        - ARANGODB_VERSION=3.3.0
-    - php: 7.2
-      env:
-        - DEPENDENCIES=""
-        - TEST_COVERAGE=true
-        - ARANGODB_VERSION=3.3.19
-    - php: 7.2
-      env:
-        - DEPENDENCIES="--prefer-lowest --prefer-stable"
-        - ARANGODB_VERSION=3.3.0
+  - php: 7.1
+    env:
+    - DEPENDENCIES=""
+    - EXECUTE_CS_CHECK=true
+    - USE_VPACK=false
+    - ARANGODB_VERSION=3.3.19
+  - php: 7.1
+    env:
+    - DEPENDENCIES="--prefer-lowest --prefer-stable"
+    - USE_VPACK=true
+    - ARANGODB_VERSION=3.3.0
+  - php: 7.2
+    env:
+    - DEPENDENCIES=""
+    - TEST_COVERAGE=true
+    - USE_VPACK=false
+    - ARANGODB_VERSION=3.3.19
+  - php: 7.2
+    env:
+    - DEPENDENCIES="--prefer-lowest --prefer-stable"
+    - USE_VPACK=true
+    - ARANGODB_VERSION=3.3.0
+  - php: 7.3
+    env:
+    - DEPENDENCIES=""
+    - USE_VPACK=true
+    - ARANGODB_VERSION=3.3.19
+  - php: 7.3
+    env:
+    - DEPENDENCIES="--prefer-lowest --prefer-stable"
+    - USE_VPACK=false
+    - ARANGODB_VERSION=3.3.0
+  - php: nightly
+    env:
+    - DEPENDENCIES=""
+    - USE_VPACK=true
+    - ARANGODB_VERSION=3.3.19
+  - php: nightly
+    env:
+    - DEPENDENCIES="--prefer-lowest --prefer-stable"
+    - USE_VPACK=false
+    - ARANGODB_VERSION=3.3.0
+
+  allow_failures:
+  - php: nightly
 
 addons:
   hosts:
-    - arangodb
+  - arangodb
 
 cache:
   directories:
-    - $HOME/.composer/cache
-    - $HOME/.php-cs-fixer
-    - $HOME/.local
+  - $HOME/.composer/cache
+  - $HOME/.php-cs-fixer
+  - $HOME/.local
 
 before_script:
-  - mkdir -p "$HOME/.php-cs-fixer"
-  - phpenv config-rm xdebug.ini
-  - composer self-update
-  - composer update --prefer-dist $DEPENDENCIES
-  - ./test/travis/setup_arangodb.sh
+- mkdir -p "$HOME/.php-cs-fixer"
+- composer self-update
+- composer update --prefer-dist $DEPENDENCIES
+- if [[ $USE_VPACK == 'true' ]]; then sudo apt-get update; fi
+- if [[ $USE_VPACK == 'true' ]]; then sudo apt-get install -y git build-essential autoconf automake libtool bison re2c cmake; fi
+- if [[ $USE_VPACK == 'true' ]]; then ./test/travis/compile_vpack.sh; fi
+- ./test/travis/setup_arangodb.sh
 
 script:
-  - if [[ $EXECUTE_CS_CHECK == 'true' ]]; then ./vendor/bin/phpcs; fi
-  - if [[ $EXECUTE_CS_CHECK == 'true' ]]; then ./vendor/bin/docheader check src/ tests/; fi
-  - if [[ $TEST_COVERAGE == 'true' ]]; then php -dzend_extension=xdebug.so ./vendor/bin/phpunit --coverage-text --coverage-clover ./build/logs/clover.xml; else ./vendor/bin/phpunit; fi
+- if [[ $EXECUTE_CS_CHECK == 'true' ]]; then ./vendor/bin/phpcs; fi
+- if [[ $EXECUTE_CS_CHECK == 'true' ]]; then ./vendor/bin/docheader check src/ tests/; fi
+- if [[ $TEST_COVERAGE == 'true' ]]; then php -dzend_extension=xdebug.so ./vendor/bin/phpunit --coverage-text --coverage-clover ./build/logs/clover.xml; fi
+- if [[ $USE_VPACK == 'true' ]]; then php -dextension=velocypack.so ./vendor/bin/phpunit; fi
+- if [[ $USE_VPACK == 'false' ]]; then php ./vendor/bin/phpunit; fi
 
 after_success:
-  - if [[ $TEST_COVERAGE == 'true' ]]; then php vendor/bin/coveralls -v; fi
+- if [[ $TEST_COVERAGE == 'true' ]]; then php vendor/bin/coveralls -v; fi
