@@ -11,11 +11,13 @@ namespace ArangoDb;
 
 use ArangoDb\Type\CreateCursor;
 use ArangoDBClient\Urls;
+use Countable;
 use Fig\Http\Message\RequestMethodInterface;
 use GuzzleHttp\Psr7\Request;
+use Iterator;
 use Velocypack\Vpack;
 
-class Statement implements \Iterator
+class Statement implements Iterator, Countable
 {
     /**
      * result entry for cursor id
@@ -284,7 +286,7 @@ class Statement implements \Iterator
      * @throws Exception
      * @return int - total number of results
      */
-    public function getCount()
+    public function count()
     {
         while ($this->hasMore) {
             $this->fetchOutstanding();
