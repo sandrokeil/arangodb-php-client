@@ -10,6 +10,7 @@
 namespace ArangoDb;
 
 use Psr\Http\Message\StreamInterface;
+use Velocypack\Vpack;
 
 final class VpackStream implements StreamInterface
 {
@@ -23,7 +24,7 @@ final class VpackStream implements StreamInterface
     /**
      * Original data
      *
-     * @var string|array|\Velocypack\Vpack
+     * @var string|array|Vpack
      */
     private $data;
 
@@ -48,17 +49,17 @@ final class VpackStream implements StreamInterface
         $this->isVpack = $isVpack;
     }
 
-    public function vpack(): \Velocypack\Vpack
+    public function vpack(): Vpack
     {
-        if ($this->data instanceof \Velocypack\Vpack) {
+        if ($this->data instanceof Vpack) {
             return $this->data;
         }
         if (is_string($this->data)) {
             $this->data = $this->isVpack
-                ? \Velocypack\Vpack::fromBinary($this->data)
-                : \Velocypack\Vpack::fromJson($this->data);
+                ? Vpack::fromBinary($this->data)
+                : Vpack::fromJson($this->data);
         } else {
-            $this->data = \Velocypack\Vpack::fromArray($this->data);
+            $this->data = Vpack::fromArray($this->data);
         }
         return $this->data;
     }
@@ -153,12 +154,12 @@ final class VpackStream implements StreamInterface
 
     public function getContents()
     {
-        if ($this->data instanceof \Velocypack\Vpack) {
+        if ($this->data instanceof Vpack) {
             return $this->data->toJson();
         }
 
         if ($this->isVpack === true && is_string($this->data)) {
-            $this->data = \Velocypack\Vpack::fromBinary($this->data);
+            $this->data = Vpack::fromBinary($this->data);
             return $this->data->toJson();
         }
 

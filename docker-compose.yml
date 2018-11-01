@@ -20,6 +20,7 @@ services:
       context: ./env
       dockerfile: Dockerfile
     environment:
+      USE_VPACK: "true"
       PHP_IDE_CONFIG: "serverName=application"
       XDEBUG_CONFIG: "remote_host=phpstorm"
       arangodb_host: "tcp://arangodb:8529"

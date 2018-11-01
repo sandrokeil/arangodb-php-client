@@ -58,9 +58,6 @@ class VpackStreamTest extends TestCase
      */
     public function it_handles_vpack_data(): void
     {
-        if (!class_exists('Velocypack\Vpack')) {
-            $this->markTestSkipped('Velocypack PHP extension not found.');
-        }
         $json = '{"test":1,"stream":true,"name":"vpack"}';
         $vpack = \Velocypack\Vpack::fromJson($json);
         // Vpack sorts json data

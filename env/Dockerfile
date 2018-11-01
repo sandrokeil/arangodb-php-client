@@ -25,12 +25,10 @@ RUN git clone --branch ${VELOCYPACK_PHP} https://github.com/martin-schilling/php
     && cd deps/velocypack \
     && mkdir -p build \
     && cd build \
-    && cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS=-fPIC \
+    && cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-fPIC -std=c++11" \
     && make install
 
-
 RUN pecl install xdebug
-
 
 RUN cd /tmp/php-velocypack \
     && phpize && ./configure \
