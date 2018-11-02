@@ -14,6 +14,7 @@ namespace ArangoDbTest;
 use ArangoDb\Client;
 use ArangoDb\Type\CountCollection;
 use ArangoDb\Type\CreateCollection;
+use ArangoDb\Type\CreateIndex;
 use ArangoDb\Type\InsertDocument;
 use ArangoDb\VpackStream;
 use Fig\Http\Message\StatusCodeInterface;
@@ -61,6 +62,55 @@ class ClientTest extends TestCase
         }
 
         $this->assertStringStartsWith('{"code":200,', $content);
+    }
+
+    /**
+     * @test
+     */
+    public function it_creates_collection_index(): void
+    {
+        $createCollection = CreateCollection::with('myColIndex');
+        $response = $this->client->sendRequest($createCollection->toRequest());
+
+        $this->assertEquals(StatusCodeInterface::STATUS_OK, $response->getStatusCode());
+
+        $body = $response->getBody();
+
+        if ($body instanceof VpackStream) {
+            $content = $body->vpack()->toJson();
+            $this->assertEquals($content, $body->getContents());
+        } else {
+            $content = $body->getContents();
+        }
+
+        $this->assertStringStartsWith('{"code":200,', $content);
+
+        $createCollection = CreateIndex::with(
+            'myColIndex',
+            [
+                'type' => 'hash',
+                'fields' => [
+                    'real_stream_name',
+                ],
+                'selectivityEstimate' => 1,
+                'unique' => true,
+                'sparse' => false,
+            ]
+        );
+        $response = $this->client->sendRequest($createCollection->toRequest());
+
+        $this->assertEquals(StatusCodeInterface::STATUS_CREATED, $response->getStatusCode());
+
+        $body = $response->getBody();
+
+        if ($body instanceof VpackStream) {
+            $content = $body->vpack()->toJson();
+            $this->assertEquals($content, $body->getContents());
+        } else {
+            $content = $body->getContents();
+        }
+
+        $this->assertStringStartsWith('{"code":201', $content);
     }
 
     /**

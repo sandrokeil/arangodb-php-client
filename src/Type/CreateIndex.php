@@ -57,7 +57,7 @@ final class CreateIndex implements CollectionType
     {
         return new Request(
             RequestMethodInterface::METHOD_POST,
-            Urls::URL_INDEX . '/?' . http_build_query(['collection' => $this->collectionName]),
+            Urls::URL_INDEX . '?' . http_build_query(['collection' => $this->collectionName]),
             [],
             new VpackStream($this->options)
         );

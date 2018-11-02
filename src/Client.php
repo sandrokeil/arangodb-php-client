@@ -143,14 +143,14 @@ final class Client implements \Psr\Http\Client\ClientInterface
 
         $customHeader .= 'Content-Length: ' . strlen($body) . HttpHelper::EOL;
 
-        $url = $this->baseUrl . $request->getUri()->getPath();
+        $url = $this->baseUrl . $request->getUri();
 
         try {
             $handle = $this->getHandle();
 
             $result = HttpHelper::transfer(
                 $handle,
-                $method . ' ' . $this->baseUrl . $request->getUri()->getPath() . ' ' . HttpHelper::PROTOCOL .
+                $method . ' ' . $url . ' ' . HttpHelper::PROTOCOL .
                 $this->httpHeader .   // note: this one starts with an EOL
                 $customHeader . HttpHelper::EOL .
                 $body,

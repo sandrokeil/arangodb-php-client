@@ -71,7 +71,7 @@ final class InsertDocument implements CollectionType
     {
         return new Request(
             RequestMethodInterface::METHOD_POST,
-            Urls::URL_DOCUMENT . '/' . $this->collectionName . '/?' . http_build_query($this->options),
+            Urls::URL_DOCUMENT . '/' . $this->collectionName . '?' . http_build_query($this->options),
             [],
             new VpackStream($this->streamEvents)
         );

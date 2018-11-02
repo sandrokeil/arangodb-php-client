@@ -64,7 +64,7 @@ final class DeleteDocumentByExample implements CollectionType
     {
         return new Request(
             RequestMethodInterface::METHOD_PUT,
-            Urls::URL_REMOVE_BY_EXAMPLE . '/?' . http_build_query($this->options),
+            Urls::URL_REMOVE_BY_EXAMPLE . '?' . http_build_query($this->options),
             [],
             new VpackStream(
                 [

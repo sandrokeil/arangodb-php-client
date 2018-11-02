@@ -55,7 +55,7 @@ final class ReadCollection implements CollectionType
     public function toRequest(): RequestInterface
     {
         return new Request(
-            RequestMethodInterface::METHOD_GET . '/?' . http_build_query($this->options),
+            RequestMethodInterface::METHOD_GET . '?' . http_build_query($this->options),
             Urls::URL_COLLECTION
         );
     }

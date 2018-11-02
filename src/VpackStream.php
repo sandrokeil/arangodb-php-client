@@ -42,6 +42,7 @@ final class VpackStream implements StreamInterface
 
     /**
      * @param string|array $data
+     * @param bool $isVpack
      */
     public function __construct($data, bool $isVpack = false)
     {

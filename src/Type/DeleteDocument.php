@@ -63,7 +63,7 @@ final class DeleteDocument implements CollectionType
     {
         return new Request(
             RequestMethodInterface::METHOD_DELETE,
-            Urls::URL_DOCUMENT . '/' . $this->collectionName . '/?' . http_build_query($this->options),
+            Urls::URL_DOCUMENT . '/' . $this->collectionName . '?' . http_build_query($this->options),
             [],
             new VpackStream($this->keys)
         );
