@@ -12,7 +12,7 @@ namespace Velocypack;
 use ArrayAccess;
 use Countable;
 
-class Vpack implements ArrayAccess, Countable
+final class Vpack implements ArrayAccess, Countable
 {
     /**
      * @var array
@@ -89,7 +89,7 @@ class Vpack implements ArrayAccess, Countable
      */
     public function __set($key, $value)
     {
-        return $this->offsetSet($key, $value);
+        $this->offsetSet($key, $value);
     }
 
     /**
@@ -100,7 +100,7 @@ class Vpack implements ArrayAccess, Countable
      */
     public function __unset($key)
     {
-        return $this->offsetUnset($key);
+        $this->offsetUnset($key);
     }
 
     /**

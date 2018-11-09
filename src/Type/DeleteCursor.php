@@ -12,9 +12,9 @@ declare(strict_types=1);
 namespace ArangoDb\Type;
 
 use ArangoDb\Exception\LogicException;
-use ArangoDBClient\Urls;
+use ArangoDb\Url;
 use Fig\Http\Message\RequestMethodInterface;
-use GuzzleHttp\Psr7\Request;
+use ArangoDb\Http\Request;
 use Psr\Http\Message\RequestInterface;
 
 final class DeleteCursor implements Type
@@ -44,7 +44,7 @@ final class DeleteCursor implements Type
     {
         return new Request(
             RequestMethodInterface::METHOD_DELETE,
-            Urls::URL_CURSOR . '/' . $this->cursorId
+            Url::CURSOR . '/' . $this->cursorId
         );
     }
 

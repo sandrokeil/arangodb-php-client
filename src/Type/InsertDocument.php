@@ -11,13 +11,12 @@ declare(strict_types=1);
 
 namespace ArangoDb\Type;
 
-use ArangoDb\VpackStream;
-use ArangoDBClient\Urls;
+use ArangoDb\Http\VpackStream;
+use ArangoDb\Url;
 use Fig\Http\Message\RequestMethodInterface;
-use GuzzleHttp\Psr7\Request;
+use ArangoDb\Http\Request;
 use Iterator;
 use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\ResponseInterface;
 
 final class InsertDocument implements CollectionType
 {
@@ -27,7 +26,7 @@ final class InsertDocument implements CollectionType
     private $collectionName;
 
     /**
-     * @var iterable
+     * @var array
      */
     private $streamEvents;
 
@@ -36,7 +35,7 @@ final class InsertDocument implements CollectionType
      */
     private $options;
 
-    private function __construct(string $collectionName, iterable $streamEvents, array $options = [])
+    private function __construct(string $collectionName, array $streamEvents, array $options = [])
     {
         $this->collectionName = $collectionName;
         $this->streamEvents = $streamEvents;
@@ -48,11 +47,11 @@ final class InsertDocument implements CollectionType
      * @see https://docs.arangodb.com/3.3/HTTP/Document/WorkingWithDocuments.html#create-document
      *
      * @param string $collectionName
-     * @param iterable $docs
+     * @param array $docs
      * @param array $options
      * @return InsertDocument
      */
-    public static function with(string $collectionName, iterable $docs, array $options = []): InsertDocument
+    public static function with(string $collectionName, array $docs, array $options = []): InsertDocument
     {
         return new self($collectionName, $docs, $options);
     }
@@ -62,16 +61,11 @@ final class InsertDocument implements CollectionType
         return $this->collectionName;
     }
 
-    public function checkResponse(ResponseInterface $response, string $rId = null): ?int
-    {
-        return ($this->inspector)($response, $rId);
-    }
-
     public function toRequest(): RequestInterface
     {
         return new Request(
             RequestMethodInterface::METHOD_POST,
-            Urls::URL_DOCUMENT . '/' . $this->collectionName . '?' . http_build_query($this->options),
+            Url::DOCUMENT . '/' . $this->collectionName . '?' . http_build_query($this->options),
             [],
             new VpackStream($this->streamEvents)
         );
@@ -79,19 +73,12 @@ final class InsertDocument implements CollectionType
 
     public function toJs(): string
     {
-        if (method_exists($this->streamEvents, 'asJson') === true) {
-            return 'var rId = db.' . $this->collectionName
-                . '.insert(' . $this->streamEvents->asJson() . ', ' . json_encode($this->options) . ');';
-        }
-
         return 'var rId = db.' . $this->collectionName
             . '.insert(' . json_encode($this->streamEvents) . ', ' . json_encode($this->options) . ');';
     }
 
     public function count(): int
     {
-        return $this->streamEvents instanceof Iterator
-            ? iterator_count($this->streamEvents)
-            : count($this->streamEvents);
+        return count($this->streamEvents);
     }
 }

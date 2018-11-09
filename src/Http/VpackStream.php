@@ -7,7 +7,7 @@
  * @license   http://github.com/sandrokeil/arangodb-php-client/blob/master/LICENSE.md New BSD License
  */
 
-namespace ArangoDb;
+namespace ArangoDb\Http;
 
 use Psr\Http\Message\StreamInterface;
 use Velocypack\Vpack;
@@ -31,7 +31,7 @@ final class VpackStream implements StreamInterface
     /**
      * Buffered json data if needed
      *
-     * @var string
+     * @var string|null
      */
     private $buffer;
 
@@ -159,7 +159,7 @@ final class VpackStream implements StreamInterface
             return $this->data->toJson();
         }
 
-        if ($this->isVpack === true && is_string($this->data)) {
+        if ($this->isVpack === true && is_string($this->data) && $this->data !== '') {
             $this->data = Vpack::fromBinary($this->data);
             return $this->data->toJson();
         }

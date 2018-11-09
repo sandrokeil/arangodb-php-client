@@ -6,35 +6,43 @@
  * @copyright Copyright (c) 2018 Sandro Keil
  * @license   http://github.com/sandrokeil/arangodb-php-client/blob/master/LICENSE.md New BSD License
  */
-declare(strict_types=1);
 
 namespace ArangoDb\Exception;
 
-use Fig\Http\Message\StatusCodeInterface;
-use Psr\Http\Client\RequestExceptionInterface;
+use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Message\RequestInterface;
-use Throwable;
+use Psr\Http\Message\ResponseInterface;
 
-final class RequestFailedException extends RuntimeException implements RequestExceptionInterface
+final class ServerException extends RuntimeException implements ClientExceptionInterface
 {
+    /**
+     * @var ResponseInterface
+     */
+    private $response;
+
     /**
      * @var RequestInterface
      */
     private $request;
 
-    public static function ofRequest(RequestInterface $request, Throwable $previousException = null)
+    public static function for(RequestInterface $request, ResponseInterface $response): self
     {
         $self = new self(
-            sprintf('Request to "%s" failed.', $request->getUri()),
-            StatusCodeInterface::STATUS_INTERNAL_SERVER_ERROR,
-            $previousException
+            sprintf('Response with status code "%s" was returned.', $response->getStatusCode()),
+            $response->getStatusCode()
         );
         $self->request = $request;
+        $self->response = $response;
         return $self;
     }
 
     public function getRequest(): RequestInterface
     {
         return $this->request;
+    }
+
+    public function getResponse(): ResponseInterface
+    {
+        return $this->response;
     }
 }

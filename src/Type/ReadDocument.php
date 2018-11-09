@@ -11,9 +11,9 @@ declare(strict_types=1);
 
 namespace ArangoDb\Type;
 
-use ArangoDBClient\Urls;
+use ArangoDb\Url;
 use Fig\Http\Message\RequestMethodInterface;
-use GuzzleHttp\Psr7\Request;
+use ArangoDb\Http\Request;
 use Psr\Http\Message\RequestInterface;
 
 final class ReadDocument implements CollectionType
@@ -24,7 +24,7 @@ final class ReadDocument implements CollectionType
     private $collectionName;
 
     /**
-     * @var array
+     * @var string
      */
     private $id;
 
@@ -56,7 +56,7 @@ final class ReadDocument implements CollectionType
     {
         return new Request(
             RequestMethodInterface::METHOD_GET,
-            Urls::URL_DOCUMENT . '/' . $this->collectionName . '/' . $this->id
+            Url::DOCUMENT . '/' . $this->collectionName . '/' . $this->id
         );
     }
 
