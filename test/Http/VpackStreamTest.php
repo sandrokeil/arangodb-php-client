@@ -7,9 +7,9 @@
  * @license   http://github.com/sandrokeil/arangodb-php-client/blob/master/LICENSE.md New BSD License
  */
 
-namespace ArangoDbTest;
+namespace ArangoDbTest\Http;
 
-use ArangoDb\VpackStream;
+use ArangoDb\Http\VpackStream;
 use PHPUnit\Framework\TestCase;
 
 class VpackStreamTest extends TestCase

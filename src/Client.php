@@ -11,63 +11,68 @@ declare(strict_types=1);
 
 namespace ArangoDb;
 
-use ArangoDBClient\ClientException;
-use ArangoDBClient\ConnectionOptions;
-use ArangoDBClient\Endpoint;
-use ArangoDBClient\FailoverException;
-use ArangoDBClient\HttpHelper;
-use ArangoDBClient\ServerException;
+use ArangoDb\Exception\ConnectionException;
+use ArangoDb\Exception\NetworkException;
+use ArangoDb\Exception\RequestFailedException;
+use ArangoDb\Exception\TimeoutException;
+use ArangoDb\Http\VpackStream;
 use Fig\Http\Message\StatusCodeInterface;
-use GuzzleHttp\Psr7\Response;
+use ArangoDb\Http\Response;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Throwable;
 
 final class Client implements \Psr\Http\Client\ClientInterface
 {
     /**
-     * HTTP leader endpoint header, used in failover
+     * Chunk size in bytes
      */
-    public const HEADER_LEADER_ENDPOINT = 'x-arango-endpoint';
+    private const CHUNK_SIZE = 8192;
 
     /**
-     * Connection handle, used in case of keep-alive
+     * End of line mark used in HTTP
+     */
+    private const EOL = "\r\n";
+
+    /**
+     * Separator between header and body
+     */
+    private const BODY_SEPARATOR = "\r\n\r\n";
+
+    /**
+     * Connection handle
      *
      * @var resource
      */
     private $handle;
 
     /**
-     * Flag if keep-alive connections are used
-     *
      * @var bool
      */
     private $useKeepAlive;
 
     /**
-     * @var ConnectionOptions
+     * @var ClientOptions
      */
     private $options;
 
     /**
-     * Pre-assembled base URL for the current database
-     * This is pre-calculated when connection options are set/changed, to avoid
-     * calculation of the same base URL in each request done via the
-     * connection
-     *
      * @var string
      */
     private $baseUrl = '';
 
     /**
-     * Pre-assembled HTTP headers string for connection
-     * This is pre-calculated when connection options are set/changed, to avoid
-     * calculation of the same HTTP header values in each request done via the
-     * connection
+     * Default headers for all requests
      *
      * @var string
      */
-    private $httpHeader = '';
+    private $headerLines = '';
+
+    /**
+     * Default headers which can be overridden by a request
+     *
+     * @var array
+     */
+    private $defaultHeaders;
 
     /**
      * @var string
@@ -75,291 +80,286 @@ final class Client implements \Psr\Http\Client\ClientInterface
     private $database = '';
 
     /**
-     * @var array
-     */
-    private $defaultHeaders;
-
-    /**
-     * @param array|ConnectionOptions $options
+     * @param array|ClientOptions $options
      * @param array $defaultHeaders PSR-7 headers
-     * @throws ClientException
      */
     public function __construct($options, array $defaultHeaders = [])
     {
-        $this->options = $options instanceof ConnectionOptions ? $options : new ConnectionOptions($options);
-        $this->useKeepAlive = ($this->options[ConnectionOptions::OPTION_CONNECTION] === 'Keep-Alive');
+        $this->options = $options instanceof ClientOptions ? $options : new ClientOptions($options);
+        $this->useKeepAlive = ($this->options[ClientOptions::OPTION_CONNECTION] === 'Keep-Alive');
         $this->defaultHeaders = $defaultHeaders;
-        $this->updateHttpHeader();
+        $this->updateCommonHttpHeaders();
     }
 
     /**
-     * Delegate method fur Guzzle handler
+     * Delegate / shorthand method
      *
      * @param RequestInterface $request
      * @return ResponseInterface
-     * @throws \ArangoDBClient\ServerException
+     * @throws \Psr\Http\Client\ClientExceptionInterface
      */
     public function __invoke(RequestInterface $request): ResponseInterface
     {
         return $this->sendRequest($request);
     }
 
-    // TODO use PSR Exceptions ?
-
-    /**
-     * @param RequestInterface $request
-     * @return ResponseInterface
-     * @throws \ArangoDBClient\ServerException
-     */
     public function sendRequest(RequestInterface $request): ResponseInterface
     {
-        $body = $request->getBody();
-        $method = $request->getMethod();
+        try {
+            $body = $request->getBody();
+            $method = $request->getMethod();
 
-        $customHeaders = array_merge($this->defaultHeaders, $request->getHeaders());
-        unset($customHeaders['Connection'], $customHeaders['Content-Length']);
+            $customHeaders = array_merge($this->defaultHeaders, $request->getHeaders());
+            unset($customHeaders['Connection'], $customHeaders['Content-Length']);
 
-        if (! isset($customHeaders['Content-Type'])) {
-            $customHeaders['Content-Type'] = ['application/json'];
-        }
-
-        $useVpack = false;
-
-        $customHeader = '';
-        foreach ($customHeaders as $headerKey => $headerValues) {
-            foreach ($headerValues as $headerValue) {
-                if ($headerKey === 'Content-Type' && $headerValue === 'application/x-velocypack') {
-                    $useVpack = true;
-                }
-                $customHeader .= $headerKey . ': ' . $headerValue . HttpHelper::EOL;
+            if (! isset($customHeaders['Content-Type'])) {
+                $customHeaders['Content-Type'] = ['application/json'];
             }
+
+            $useVpack = false;
+
+            $customHeader = '';
+            foreach ($customHeaders as $headerKey => $headerValues) {
+                foreach ($headerValues as $headerValue) {
+                    if ($headerKey === 'Content-Type' && $headerValue === 'application/x-velocypack') {
+                        $useVpack = true;
+                    }
+                    $customHeader .= $headerKey . ': ' . $headerValue . self::EOL;
+                }
+            }
+
+            if ($useVpack === true && $body instanceof VpackStream) {
+                $body = $body->vpack()->toBinary();
+            } else {
+                $body = $body->getContents();
+            }
+        } catch (\Throwable $e) {
+            throw RequestFailedException::ofRequest($request, $e);
         }
 
-        if ($useVpack === true && $body instanceof VpackStream) {
-            $body = $body->vpack()->toBinary();
-        } else {
-            $body = $body->getContents();
-        }
-
-        $customHeader .= 'Content-Length: ' . strlen($body) . HttpHelper::EOL;
+        $customHeader .= 'Content-Length: ' . strlen($body) . self::EOL;
 
         $url = $this->baseUrl . $request->getUri();
 
         try {
-            $handle = $this->getHandle();
+            $this->open($request);
 
-            $result = HttpHelper::transfer(
-                $handle,
-                $method . ' ' . $url . ' ' . HttpHelper::PROTOCOL .
-                $this->httpHeader .   // note: this one starts with an EOL
-                $customHeader . HttpHelper::EOL .
+            $result = $this->transmit(
+                $method . ' ' . $url . ' HTTP/1.1' .
+                $this->headerLines .
+                $customHeader . self::EOL .
                 $body,
-                $request->getMethod()
+                $method
             );
 
-            $status = stream_get_meta_data($handle);
-            if ($status['timed_out']) {
-                // can't connect to server because of timeout.
-                // now check if we have additional servers to connect to
-                if ($this->options->haveMultipleEndpoints()) {
-                    // connect to next server in list
-                    $currentLeader = $this->options->getCurrentEndpoint();
-                    $newLeader = $this->options->nextEndpoint();
+            $status = stream_get_meta_data($this->handle);
 
-                    if ($newLeader && ($newLeader !== $currentLeader)) {
-                        // close existing connection
-                        $this->closeHandle();
-                        $this->updateHttpHeader();
-
-                        $exception = new FailoverException(
-                            "Got a timeout while waiting for the server's response",
-                            408
-                        );
-                        $exception->setLeader($newLeader);
-                        throw $exception;
-                    }
-                }
-
-                throw new ClientException("Got a timeout while waiting for the server's response", 408);
+            if (! empty($status['timed_out'])) {
+                throw TimeoutException::ofRequest($request);
             }
-
             if (! $this->useKeepAlive) {
-                // must close the connection
-                fclose($handle);
+                $this->close();
             }
-            [$header, $body] = HttpHelper::parseHttpMessage($result, $url, $method);
-            [$httpCode, $result, $headers] = HttpHelper::parseHeaders($header);
-        } catch (Throwable $e) {
-            throw new \ArangoDBClient\ServerException($e->getCode(), $e->getMessage(), $e);
-        }
 
-        $this->checkResponse($httpCode, $body, $result, $headers);
+            [$httpCode, $headers, $body] = $this->parseMessage($result);
+        } catch (\Throwable $e) {
+            throw NetworkException::for($request, $e);
+        }
 
         return new Response(
             $httpCode,
             $headers,
-            $useVpack ? new VpackStream($body, true) : $body
+            new VpackStream($body, $useVpack)
         );
     }
 
     /**
-     * Parse the response for errors
+     * Sends request to server and reads response.
      *
-     * @param int $httpCode
-     * @param string $body
-     * @param string $result
-     * @param array $headers
-     * @throws ClientException
-     * @throws FailoverException
-     * @throws ServerException
+     * @param string $request
+     * @param string $method
+     * @return string
      */
-    private function checkResponse(int $httpCode, string $body, string $result, array $headers): void
+    private function transmit(string $request, string $method): string
     {
-        if ($httpCode < StatusCodeInterface::STATUS_OK || $httpCode >= StatusCodeInterface::STATUS_BAD_REQUEST) {
-            // failure on server
-            if ($body !== '') {
-                // check if we can find details in the response body
-                $details = json_decode($body, true);
+        fwrite($this->handle, $request);
+        fflush($this->handle);
 
-                // handle failover
-                if ($details !== null && isset($details['errorNum'])) {
-                    if ($details['errorNum'] === 1495) {
-                        // 1495 = leadership challenge is ongoing
-                        $exception = new FailoverException(@$details['errorMessage'], @$details['code']);
-                        throw $exception;
-                    }
+        $contentLength = 0;
+        $bodyLength = 0;
+        $readTotal = 0;
+        $matches = [];
+        $message = '';
 
-                    if ($details['errorNum'] === 1496) {
-                        // 1496 = not a leader
-                        // not a leader. now try to find new leader
-                        $leader = $headers[self::HEADER_LEADER_ENDPOINT] ?? '';
-                        if ($leader) {
-                            // have a different leader
-                            $leader = Endpoint::normalize($leader);
-                            $this->options->addEndpoint($leader);
-                        } else {
-                            $leader = $this->options->nextEndpoint();
-                        }
+        do {
+            $read = fread($this->handle, self::CHUNK_SIZE);
+            if (false === $read || $read === '') {
+                break;
+            }
+            $readLength = strlen($read);
+            $readTotal += $readLength;
+            $message .= $read;
 
-                        // close existing connection
-                        $this->closeHandle();
-                        $this->updateHttpHeader();
+            if ($contentLength === 0
+                && $method !== 'HEAD'
+                && preg_match('/content-length: (\d+)/i', $message, $matches)
+            ) {
+                $contentLength = (int)$matches[1];
+            }
 
-                        $exception = new FailoverException($details['errorMessage'] ?? '', $details['code'] ?? '');
-                        $exception->setLeader($leader);
-                        throw $exception;
-                    }
+            if ($bodyLength === 0) {
+                $bodyStart = strpos($message, "\r\n\r\n");
 
-                    if (isset($details['errorMessage'])) {
-                        // yes, we got details
-                        $exception = new ServerException($details['errorMessage'], $details['code']);
-                        $exception->setDetails($details);
-                        throw $exception;
-                    }
+                if (false !== $bodyStart) {
+                    $bodyLength = $bodyStart + $contentLength + 4;
                 }
             }
+        } while ($readTotal < $bodyLength && ! feof($this->handle));
 
-            // check if server has responded with any other 503 response not handled above
-            if ($httpCode === 503) {
-                // generic service unavailable response
-                $exception = new FailoverException('service unavailable', 503);
-                throw $exception;
-            }
-
-            // no details found, throw normal exception
-            throw new ServerException($result, $httpCode);
-        }
+        return $message;
     }
 
     /**
-     * Recalculate the static HTTP header string used for all HTTP requests in this connection
+     * Splits the message in HTTP status code, headers and body.
+     *
+     * @param string $message
+     * @return array Values are HTTP status code, PSR-7 headers and body
      */
-    private function updateHttpHeader(): void
+    private function parseMessage(string $message): array
     {
-        $this->httpHeader = HttpHelper::EOL;
+        $startLine = null;
+        $headers = [];
+        [$headerLines, $body] = explode(self::BODY_SEPARATOR, $message, 2);
+        $headerLines = explode("\n", $headerLines);
 
-        $endpoint = $this->options->getCurrentEndpoint();
-        if (Endpoint::getType($endpoint) !== Endpoint::TYPE_UNIX) {
-            $this->httpHeader .= 'Host: ' . Endpoint::getHost($endpoint) . HttpHelper::EOL;
+        foreach ($headerLines as $header) {
+            // Parse message headers
+            if ($startLine === null) {
+                $startLine = explode(' ', $header, 3);
+                continue;
+            }
+            $parts = explode(':', $header, 2);
+            $key = trim($parts[0]);
+            $value = isset($parts[1]) ? trim($parts[1]) : '';
+
+            if (! isset($headers[$key])) {
+                $headers[$key] = [];
+            }
+            $headers[$key][] = $value;
         }
 
+        return [
+            (int) ($startLine[1] ?? 0),
+            $headers,
+            $body,
+        ];
+    }
+
+    /**
+     * Update common HTTP headers for all HTTP requests
+     */
+    private function updateCommonHttpHeaders(): void
+    {
+        $this->headerLines = self::EOL;
+
+        $endpoint = $this->options[ClientOptions::OPTION_ENDPOINT];
+        if (1 !== preg_match('/^unix:\/\/.+/', $endpoint)) {
+            $this->headerLines .= 'Host: '
+                . preg_replace('/^(tcp|ssl):\/\/(.+?):(\d+)\/?$/', '\\2', $endpoint)
+                . self::EOL;
+        }
+        // add basic auth header
         if (isset(
-            $this->options[ConnectionOptions::OPTION_AUTH_TYPE],
-            $this->options[ConnectionOptions::OPTION_AUTH_USER]
+            $this->options[ClientOptions::OPTION_AUTH_TYPE],
+            $this->options[ClientOptions::OPTION_AUTH_USER]
         )) {
-            // add authorization header
-            $authorizationValue = base64_encode(
-                $this->options[ConnectionOptions::OPTION_AUTH_USER] . ':' .
-                $this->options[ConnectionOptions::OPTION_AUTH_PASSWD]
-            );
-
-            $this->httpHeader .= sprintf(
+            $this->headerLines .= sprintf(
                 'Authorization: %s %s%s',
-                $this->options[ConnectionOptions::OPTION_AUTH_TYPE],
-                $authorizationValue,
-                HttpHelper::EOL
+                $this->options[ClientOptions::OPTION_AUTH_TYPE],
+                base64_encode(
+                    $this->options[ClientOptions::OPTION_AUTH_USER] . ':' .
+                    $this->options[ClientOptions::OPTION_AUTH_PASSWD]
+                ),
+                self::EOL
             );
         }
 
-        if (isset($this->options[ConnectionOptions::OPTION_CONNECTION])) {
-            // add connection header
-            $this->httpHeader .= 'Connection: '
-                . $this->options[ConnectionOptions::OPTION_CONNECTION]
-                . HttpHelper::EOL;
+        if (isset($this->options[ClientOptions::OPTION_CONNECTION])) {
+            $this->headerLines .= 'Connection: ' . $this->options[ClientOptions::OPTION_CONNECTION] . self::EOL;
         }
 
-        $this->database = $this->options[ConnectionOptions::OPTION_DATABASE];
+        $this->database = $this->options[ClientOptions::OPTION_DATABASE];
         $this->baseUrl = '/_db/' . urlencode($this->database);
     }
 
     /**
-     * Get a connection handle
+     * Opens connection depending on options.
      *
-     * If keep-alive connections are used, the handle will be stored and re-used
-     *
-     * @throws ClientException
-     * @return resource - connection handle
-     * @throws \ArangoDBClient\ConnectException
+     * @param RequestInterface $request
      */
-    private function getHandle()
+    private function open(RequestInterface $request): void
     {
-        if ($this->useKeepAlive && $this->handle && is_resource($this->handle)) {
-            // keep-alive and handle was created already
-            $handle = $this->handle;
-
-            // check if connection is still valid
-            if (! feof($handle)) {
-                // connection still valid
-                return $handle;
+        if ($this->useKeepAlive && $this->handle !== null && is_resource($this->handle)) {
+            if (! feof($this->handle)) {
+                return;
             }
 
-            // close handle
-            $this->closeHandle();
+            $this->close();
 
-            if (! $this->options[ConnectionOptions::OPTION_RECONNECT]) {
-                // if reconnect option not set, this is the end
-                throw new ClientException('Server has closed the connection already.');
+            if (! $this->options[ClientOptions::OPTION_RECONNECT]) {
+                throw ConnectionException::forRequest(
+                    $request,
+                    'Server has closed the connection already.',
+                    StatusCodeInterface::STATUS_REQUEST_TIMEOUT
+                );
             }
         }
 
-        // no keep-alive or no handle available yet or a reconnect
-        $handle = HttpHelper::createConnection($this->options);
+        $endpoint = $this->options[ClientOptions::OPTION_ENDPOINT];
+        $context = stream_context_create();
 
-        if ($this->useKeepAlive && is_resource($handle)) {
-            $this->handle = $handle;
+        if (preg_match('/^ssl:\/\/.+/', $endpoint)) {
+            stream_context_set_option(
+                $context,
+                [
+                    'ssl' => [
+                        'verify_peer' => $this->options[ClientOptions::OPTION_VERIFY_CERT],
+                        'verify_peer_name' => $this->options[ClientOptions::OPTION_VERIFY_CERT_NAME],
+                        'allow_self_signed' => $this->options[ClientOptions::OPTION_ALLOW_SELF_SIGNED],
+                        'ciphers' => $this->options[ClientOptions::OPTION_CIPHERS],
+                    ],
+                ]
+            );
         }
 
-        return $handle;
+        $handle = stream_socket_client(
+            $endpoint,
+            $errNo,
+            $message,
+            $this->options[ClientOptions::OPTION_TIMEOUT],
+            STREAM_CLIENT_CONNECT,
+            $context
+        );
+
+        if (false === $handle) {
+            throw ConnectionException::forRequest(
+                $request,
+                sprintf('Cannot connect to endpoint "%s". Message: %s', $endpoint, $message),
+                $errNo
+            );
+        }
+        $this->handle = $handle;
+        stream_set_timeout($this->handle, $this->options[ClientOptions::OPTION_TIMEOUT]);
     }
 
     /**
-     * Close an existing connection handle
+     * Closes connection
      */
-    private function closeHandle(): void
+    private function close(): void
     {
-        if ($this->handle && is_resource($this->handle)) {
-            @fclose($this->handle);
+        if (is_resource($this->handle)) {
+            fclose($this->handle);
         }
-        $this->handle = null;
+        unset($this->handle);
     }
 }

@@ -11,10 +11,10 @@ declare(strict_types=1);
 
 namespace ArangoDb\Type;
 
-use ArangoDb\VpackStream;
-use ArangoDBClient\Urls;
+use ArangoDb\Http\VpackStream;
+use ArangoDb\Url;
 use Fig\Http\Message\RequestMethodInterface;
-use GuzzleHttp\Psr7\Request;
+use ArangoDb\Http\Request;
 use Psr\Http\Message\RequestInterface;
 
 final class DeleteCollection implements CollectionType
@@ -57,7 +57,7 @@ final class DeleteCollection implements CollectionType
     {
         return new Request(
             RequestMethodInterface::METHOD_DELETE,
-            Urls::URL_COLLECTION . '/' . $this->collectionName,
+            Url::COLLECTION . '/' . $this->collectionName,
             [],
             new VpackStream($this->options)
         );
@@ -66,6 +66,6 @@ final class DeleteCollection implements CollectionType
     public function toJs(): string
     {
         return 'var rId = db._drop("' . $this->collectionName . '", '
-            . ($this->options ? json_encode($this->options) : '{}') . ');';
+            . (! empty($this->options) ? json_encode($this->options) : '{}') . ');';
     }
 }

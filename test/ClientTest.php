@@ -16,8 +16,11 @@ use ArangoDb\Type\CountCollection;
 use ArangoDb\Type\CreateCollection;
 use ArangoDb\Type\CreateIndex;
 use ArangoDb\Type\InsertDocument;
-use ArangoDb\VpackStream;
+use ArangoDb\Http\VpackStream;
+use ArangoDb\Url;
+use Fig\Http\Message\RequestMethodInterface;
 use Fig\Http\Message\StatusCodeInterface;
+use ArangoDb\Http\Request;
 use PHPUnit\Framework\TestCase;
 
 class ClientTest extends TestCase
@@ -40,6 +43,29 @@ class ClientTest extends TestCase
     protected function setUp()
     {
         $this->client = TestUtil::getClient();
+    }
+
+    /**
+     * @test
+     */
+    public function it_supports_head_requests(): void
+    {
+        $createCollection = CreateCollection::with(__FUNCTION__);
+        $response = $this->client->sendRequest($createCollection->toRequest());
+
+        $this->assertEquals(StatusCodeInterface::STATUS_OK, $response->getStatusCode());
+
+        $response = $this->client->sendRequest(InsertDocument::with(__FUNCTION__, ['_key' => 'a123'])->toRequest());
+        $this->assertEquals(StatusCodeInterface::STATUS_ACCEPTED, $response->getStatusCode());
+
+        $response = $this->client->sendRequest(
+            new Request(
+                RequestMethodInterface::METHOD_HEAD,
+                Url::DOCUMENT .'/' . __FUNCTION__ . '/a123'
+            )
+        );
+        $this->assertEquals('', $response->getBody()->getContents());
+        $this->assertEquals(StatusCodeInterface::STATUS_OK, $response->getStatusCode());
     }
 
     /**
@@ -162,4 +188,5 @@ class ClientTest extends TestCase
 
         $this->assertEquals(3, $count);
     }
+
 }

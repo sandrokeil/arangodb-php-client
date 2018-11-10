@@ -10,10 +10,10 @@ declare(strict_types=1);
 
 namespace ArangoDb\Type;
 
-use ArangoDb\VpackStream;
-use ArangoDBClient\Urls;
+use ArangoDb\Http\VpackStream;
+use ArangoDb\Url;
 use Fig\Http\Message\RequestMethodInterface;
-use GuzzleHttp\Psr7\Request;
+use ArangoDb\Http\Request;
 use Psr\Http\Message\RequestInterface;
 
 final class DeleteDocument implements CollectionType
@@ -63,7 +63,7 @@ final class DeleteDocument implements CollectionType
     {
         return new Request(
             RequestMethodInterface::METHOD_DELETE,
-            Urls::URL_DOCUMENT . '/' . $this->collectionName . '?' . http_build_query($this->options),
+            Url::DOCUMENT . '/' . $this->collectionName . '?' . http_build_query($this->options),
             [],
             new VpackStream($this->keys)
         );

@@ -9,61 +9,19 @@
 
 namespace ArangoDb;
 
+use ArangoDb\Exception\ServerException;
+use ArangoDb\Http\VpackStream;
 use ArangoDb\Type\CreateCursor;
-use ArangoDBClient\Urls;
 use Countable;
 use Fig\Http\Message\RequestMethodInterface;
-use GuzzleHttp\Psr7\Request;
+use Fig\Http\Message\StatusCodeInterface;
+use ArangoDb\Http\Request;
 use Iterator;
+use Psr\Http\Client\ClientInterface;
 use Velocypack\Vpack;
 
 class Statement implements Iterator, Countable
 {
-    /**
-     * result entry for cursor id
-     */
-    public const ENTRY_ID = 'id';
-
-    /**
-     * result entry for "hasMore" flag
-     */
-    public const ENTRY_HASMORE = 'hasMore';
-
-    /**
-     * result entry for result documents
-     */
-    public const ENTRY_RESULT = 'result';
-
-    /**
-     * result entry for extra data
-     */
-    public const ENTRY_EXTRA = 'extra';
-
-    /**
-     * result entry for stats
-     */
-    public const ENTRY_STATS = 'stats';
-
-    /**
-     * result entry for the full count (ignoring the outermost LIMIT)
-     */
-    public const FULL_COUNT = 'fullCount';
-
-    /**
-     * cache option entry
-     */
-    public const ENTRY_CACHE = 'cache';
-
-    /**
-     * cached result attribute - whether or not the result was served from the AQL query cache
-     */
-    public const ENTRY_CACHED = 'cached';
-
-    /**
-     * sanitize option entry
-     */
-    public const ENTRY_SANITIZE = 'sanitize';
-
     /**
      * "objectType" option entry.
      */
@@ -74,11 +32,45 @@ class Statement implements Iterator, Countable
     public const ENTRY_TYPE_OBJECT = 'object';
 
     /**
-     * The connection object
-     *
-     * @var Client
+     * Entry id for cursor id
+     */
+    private const ENTRY_ID = 'id';
+
+    /**
+     * Whether or not to get more documents
+     */
+    private const ENTRY_HAS_MORE = 'hasMore';
+
+    /**
+     * Result documents
+     */
+    private const ENTRY_RESULT = 'result';
+
+    /**
+     * Extra data
+     */
+    private const ENTRY_EXTRA = 'extra';
+
+    /**
+     * Stats
+     */
+    private const ENTRY_STATS = 'stats';
+
+    /**
+     * Full count (ignoring the outermost LIMIT)
+     */
+    private const FULL_COUNT = 'fullCount';
+
+    /**
+     * Whether or not the result was served from the AQL query cache
+     */
+    private const ENTRY_CACHED = 'cached';
+
+    /**
+     * @var ClientInterface
      */
     private $client;
+
     /**
      * Cursor options
      *
@@ -87,61 +79,57 @@ class Statement implements Iterator, Countable
     private $options;
 
     /**
-     * Result Data
-     *
      * @var Vpack
      */
     private $data;
 
     /**
-     * "has more" indicator - if true, the server has more results
-     *
      * @var bool
      */
     private $hasMore = true;
 
     /**
-     * cursor id - might be NULL if cursor does not have an id
+     * cursor id
      *
      * @var string
      */
     private $id;
 
     /**
-     * current position in result set iteration (zero-based)
+     * Current position in result set iteration (zero-based)
      *
      * @var int
      */
     private $position;
 
     /**
-     * total length of result set (in number of documents)
+     * Total length of result set (in number of documents)
      *
      * @var int
      */
     private $length;
 
     /**
-     * full count of the result set (ignoring the outermost LIMIT)
+     * Full count of the result set (ignoring the outermost LIMIT)
      *
      * @var int
      */
     private $fullCount;
 
     /**
-     * extra data (statistics) returned from the statement
+     * Extra data (statistics) returned from the statement
      *
      * @var array
      */
     private $extra;
 
     /**
-     * number of HTTP calls that were made to build the cursor result
+     * Number of HTTP calls that were made to build the cursor result
      */
     private $fetches = 0;
 
     /**
-     * whether or not the query result was served from the AQL query result cache
+     * Whether or not the query result was served from the AQL query result cache
      */
     private $cached;
 
@@ -156,13 +144,13 @@ class Statement implements Iterator, Countable
     private $executed = false;
 
     /**
-     * Initialise the cursor with the first results and some metadata
+     * Query is executed on first access
      *
-     * @param Client $client - connection to be used
+     * @param ClientInterface $client - connection to be used
      * @param CreateCursor $cursor
      * @param array $options
      */
-    public function __construct(Client $client, CreateCursor $cursor, array $options = [])
+    public function __construct(ClientInterface $client, CreateCursor $cursor, array $options = [])
     {
         if (! isset($options[self::ENTRY_TYPE])) {
             $options[self::ENTRY_TYPE] = self::ENTRY_TYPE_JSON;
@@ -179,33 +167,33 @@ class Statement implements Iterator, Countable
     /**
      * Fetch outstanding results from the server
      *
-     * @throws Exception
      * @return void
+     * @throws \Psr\Http\Client\ClientExceptionInterface
      */
     private function fetchOutstanding(): void
     {
-        if ($this->fetches === 0) {
-            $response = $this->client->sendRequest(
-                $this->cursor->toRequest()
-            );
-        } else {
-            // continuation
-            $response = $this->client->sendRequest(
-                new Request(
-                    RequestMethodInterface::METHOD_PUT,
-                    Urls::URL_CURSOR . '/' . $this->id
-                )
-            );
+        $request = $this->fetches === 0
+            ? $this->cursor->toRequest()
+            : new Request(RequestMethodInterface::METHOD_PUT, Url::CURSOR . '/' . $this->id);
+
+        $response = $this->client->sendRequest($request);
+
+        $httpStatusCode = $response->getStatusCode();
+
+        if ($httpStatusCode < StatusCodeInterface::STATUS_OK
+            || $httpStatusCode > StatusCodeInterface::STATUS_MULTIPLE_CHOICES
+        ) {
+            throw ServerException::for($request, $response);
         }
 
         ++$this->fetches;
 
         $data = $response->getBody();
-
+        $tmp = $data->getContents();
         if ($data instanceof VpackStream) {
             $data = $data->vpack();
         } else {
-            $data = Vpack::fromJson($data->getContents());
+            $data = Vpack::fromJson($tmp);
         }
 
         if (isset($data[self::ENTRY_ID])) {
@@ -223,39 +211,24 @@ class Statement implements Iterator, Countable
         if (isset($data[self::ENTRY_CACHED])) {
             $this->cached = $data[self::ENTRY_CACHED];
         }
-        $this->hasMore = $data[self::ENTRY_HASMORE] ?? false;
+        $this->hasMore = $data[self::ENTRY_HAS_MORE] ?? false;
 
-        $this->add($data[self::ENTRY_RESULT]);
+        $this->length += count($data[self::ENTRY_RESULT]);
+        // TODO remove Vpack::fromArray if append is ready
+        $this->data = Vpack::fromArray(array_merge($this->data->toArray(), $data[self::ENTRY_RESULT]->toArray()));
 
         if (! $this->hasMore) {
-            // we have fetched the complete result set and can unset the id now
-            $this->id = null;
+            unset($this->id);
         }
-    }
-
-    /**
-     * Create an array of results from the input array
-     *
-     * @param array $data - incoming result
-     *
-     * @return void
-     * @throws \ArangoDBClient\ClientException
-     */
-    private function add($data): void
-    {
-        $this->length += count($data);
-        // TODO remove Vpack::fromArray if append is ready
-        $this->data = Vpack::fromArray(array_merge($this->data->toArray(), $data->toArray()));
     }
 
     /**
      * Get all results as an array
      *
-     * This might issue additional HTTP requests to fetch any outstanding
-     * results from the server
+     * This might issue additional HTTP requests to fetch any outstanding results from the server
      *
-     * @throws Exception
-     * @return mixed - an array of all results
+     * @return string|array|object Data
+     * @throws \Psr\Http\Client\ClientExceptionInterface
      */
     public function getAll()
     {
@@ -278,13 +251,32 @@ class Statement implements Iterator, Countable
     }
 
     /**
+     * Get the full count of the cursor if available
+     *
+     * @return int - total number of results
+     */
+    public function getFullCount(): ?int
+    {
+        return $this->fullCount;
+    }
+
+    /**
+     * Get the cached attribute for the result set
+     *
+     * @return bool - whether or not the query result was served from the AQL query cache
+     */
+    public function getCached(): bool
+    {
+        return $this->cached;
+    }
+
+    /**
      * Get the total number of results in the cursor
      *
-     * This might issue additional HTTP requests to fetch any outstanding
-     * results from the server
+     * This might issue additional HTTP requests to fetch any outstanding results from the server
      *
-     * @throws Exception
      * @return int - total number of results
+     * @throws \Psr\Http\Client\ClientExceptionInterface
      */
     public function count()
     {
@@ -296,29 +288,10 @@ class Statement implements Iterator, Countable
     }
 
     /**
-     * Get the full count of the cursor (ignoring the outermost LIMIT)
-     *
-     * @return int - total number of results
-     */
-    public function getFullCount()
-    {
-        return $this->fullCount;
-    }
-
-    /**
-     * Get the cached attribute for the result set
-     *
-     * @return bool - whether or not the query result was served from the AQL query cache
-     */
-    public function getCached()
-    {
-        return $this->cached;
-    }
-
-    /**
-     * Rewind the cursor, necessary for Iterator
+     * Rewind the cursor, loads first batch, can be repeated (new cursor will be created)
      *
      * @return void
+     * @throws \Psr\Http\Client\ClientExceptionInterface
      */
     public function rewind()
     {
@@ -333,9 +306,9 @@ class Statement implements Iterator, Countable
     }
 
     /**
-     * Return the current result row, necessary for Iterator
+     * Return the current result row depending on entry type
      *
-     * @return mixed - the current result row as an assoc array
+     * @return string|array|object Data
      */
     public function current()
     {
@@ -350,35 +323,16 @@ class Statement implements Iterator, Countable
         }
     }
 
-    /**
-     * Return the index of the current result row, necessary for Iterator
-     *
-     * @return int - the current result row index
-     */
     public function key()
     {
         return $this->position;
     }
 
-    /**
-     * Advance the cursor, necessary for Iterator
-     *
-     * @return void
-     */
     public function next()
     {
         ++$this->position;
     }
 
-    /**
-     * Check if cursor can be advanced further, necessary for Iterator
-     *
-     * This might issue additional HTTP requests to fetch any outstanding
-     * results from the server
-     *
-     * @throws Exception
-     * @return bool - true if the cursor can be advanced further, false if cursor is at end
-     */
     public function valid()
     {
         if ($this->position <= $this->length - 1) {
@@ -386,8 +340,7 @@ class Statement implements Iterator, Countable
             return true;
         }
 
-        if (! $this->hasMore || ! $this->id) {
-            // we don't have more results, but the cursor is exhausted
+        if (! $this->hasMore || $this->id === null) {
             return false;
         }
 
@@ -404,19 +357,9 @@ class Statement implements Iterator, Countable
      *
      * @return int
      */
-    private function getStatValue($name): int
+    private function getStatValue(string $name): int
     {
         return $this->extra[self::ENTRY_STATS][$name] ?? 0;
-    }
-
-    /**
-     * Get current cursor type
-     *
-     * @return CreateCursor
-     */
-    public function getCursor(): CreateCursor
-    {
-        return $this->cursor;
     }
 
     /**
@@ -427,7 +370,7 @@ class Statement implements Iterator, Countable
      */
     public function getExtra(): array
     {
-        return $this->extra;
+        return $this->extra ?? [];
     }
 
     /**
@@ -435,7 +378,7 @@ class Statement implements Iterator, Countable
      *
      * @return array
      */
-    public function getWarnings(): int
+    public function getWarnings(): array
     {
         return $this->extra['warnings'] ?? [];
     }

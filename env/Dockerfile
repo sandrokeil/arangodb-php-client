@@ -17,6 +17,8 @@ RUN buildDeps=' \
     && apk add --no-cache --update $buildDeps \
     && docker-php-source extract
 
+RUN pecl install xdebug
+
 ENV VELOCYPACK_PHP master
 
 RUN git clone --branch ${VELOCYPACK_PHP} https://github.com/martin-schilling/php-velocypack /tmp/php-velocypack \
@@ -28,15 +30,12 @@ RUN git clone --branch ${VELOCYPACK_PHP} https://github.com/martin-schilling/php
     && cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-fPIC -std=c++11" \
     && make install
 
-RUN pecl install xdebug
-
 RUN cd /tmp/php-velocypack \
     && phpize && ./configure \
     && make all -j4 \
     && mv modules/velocypack.so $(php-config --extension-dir) \
-    && rm -rf /tmp \
+    && rm -rf /tmp/* \
     && echo "extension=velocypack.so" > /usr/local/etc/php/conf.d/velocypack.ini
-
 
 # Copy custom configuration
 COPY xdebug-cli.ini /usr/local/etc/php/conf.d/

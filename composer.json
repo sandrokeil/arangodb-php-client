@@ -13,9 +13,7 @@
         "php": "^7.1",
         "ext-json": "*",
         "fig/http-message-util": "^1.1.2",
-        "guzzlehttp/psr7": "^1.4.0",
-        "psr/http-client": "^1.0",
-        "triagens/arangodb": "^3.3.2"
+        "psr/http-client": "^1.0"
     },
     "require-dev": {
         "malukenho/docheader": "^0.1.7",
@@ -42,7 +40,7 @@
             "@test",
             "@analyze"
         ],
-        "analyze": "phpstan analyze -l max -c ./phpstan.installer.neon ./src ./config",
+        "analyze": "phpstan analyze -l max -c ./phpstan.installer.neon ./src",
         "cs-check": "phpcs",
         "cs-fix": "phpcbf",
         "test": "phpunit --colors=always",

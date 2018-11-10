@@ -14,7 +14,9 @@ namespace ArangoDbTest;
 use ArangoDb\Client;
 use ArangoDb\Type\CreateDatabase;
 use ArangoDb\Type\DeleteDatabase;
-use ArangoDBClient\ConnectionOptions;
+use ArangoDb\ClientOptions;
+use ArangoDb\Url;
+use Fig\Http\Message\StatusCodeInterface;
 use Psr\Http\Client\ClientInterface;
 
 final class TestUtil
@@ -38,11 +40,11 @@ final class TestUtil
         $type = 'application/' . (getenv('USE_VPACK') === 'true' ? 'x-velocypack' : 'json');
         $params = self::getConnectionParams();
 
-        if ($params[ConnectionOptions::OPTION_DATABASE] === '_system') {
+        if ($params[ClientOptions::OPTION_DATABASE] === '_system') {
             throw new \RuntimeException('"_system" database can not be created. Choose another database for tests.');
         }
 
-        $params[ConnectionOptions::OPTION_DATABASE] = '_system';
+        $params[ClientOptions::OPTION_DATABASE] = '_system';
 
         $client = new Client(
             $params,
@@ -51,19 +53,24 @@ final class TestUtil
                 'Accept' => [$type],
             ]
         );
-        $client->sendRequest(CreateDatabase::with(self::getDatabaseName())->toRequest());
+        $response = $client->sendRequest(CreateDatabase::with(self::getDatabaseName())->toRequest());
+
+        if ($response->getStatusCode() !== StatusCodeInterface::STATUS_CREATED) {
+            self::dropDatabase();
+            throw new \RuntimeException($response->getBody()->getContents());
+        }
     }
 
     public static function dropDatabase(): void
     {
-        $type = 'application/json';
+        $type = 'application/' . (getenv('USE_VPACK') === 'true' ? 'x-velocypack' : 'json');
         $params = self::getConnectionParams();
 
-        if ($params[ConnectionOptions::OPTION_DATABASE] === '_system') {
+        if ($params[ClientOptions::OPTION_DATABASE] === '_system') {
             throw new \RuntimeException('"_system" database can not be dropped. Choose another database for tests.');
         }
 
-        $params[ConnectionOptions::OPTION_DATABASE] = '_system';
+        $params[ClientOptions::OPTION_DATABASE] = '_system';
 
         $client = new Client(
             $params,
@@ -96,7 +103,7 @@ final class TestUtil
     public static function deleteCollection(ClientInterface $connection, string $collection): void
     {
         try {
-            $connection->delete(Urls::URL_COLLECTION . '/' . $collection, []);
+            $connection->delete(Url::COLLECTION . '/' . $collection, []);
         } catch (RequestFailedException $e) {
             // needed if test deletes collection
         }
@@ -115,8 +122,8 @@ final class TestUtil
     private static function getSpecifiedConnectionParams(): array
     {
         return [
-            ConnectionOptions::OPTION_ENDPOINT => getenv('arangodb_host'),
-            ConnectionOptions::OPTION_DATABASE => getenv('arangodb_dbname'),
+            ClientOptions::OPTION_ENDPOINT => getenv('arangodb_host'),
+            ClientOptions::OPTION_DATABASE => getenv('arangodb_dbname'),
         ];
     }
 }

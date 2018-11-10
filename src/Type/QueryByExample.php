@@ -10,10 +10,10 @@ declare(strict_types=1);
 
 namespace ArangoDb\Type;
 
-use ArangoDb\VpackStream;
-use ArangoDBClient\Urls;
+use ArangoDb\Http\VpackStream;
+use ArangoDb\Url;
 use Fig\Http\Message\RequestMethodInterface;
-use GuzzleHttp\Psr7\Request;
+use ArangoDb\Http\Request;
 use Psr\Http\Message\RequestInterface;
 
 final class QueryByExample implements CollectionType
@@ -48,7 +48,7 @@ final class QueryByExample implements CollectionType
      * @param string $collectionName
      * @param array $example
      * @param array $options
-     * @return UpdateDocumentByExample
+     * @return QueryByExample
      */
     public static function with(string $collectionName, array $example, array $options = []): QueryByExample
     {
@@ -64,7 +64,7 @@ final class QueryByExample implements CollectionType
     {
         return new Request(
             RequestMethodInterface::METHOD_PUT,
-            Urls::URL_EXAMPLE,
+            Url::EXAMPLE,
             [],
             new VpackStream(
                 array_merge(

@@ -40,12 +40,14 @@ class StatementTest extends TestCase
      */
     public function it_returns_data_with_batch_size(): void
     {
+        $count = 1000;
+
         $statement = new Statement(
             $this->client,
             \ArangoDb\Type\CreateCursor::with(
-                'FOR i IN 0..99 RETURN {"_key": i+1}',
+                'FOR i IN 1..' . $count . ' RETURN {"_key": i+1}',
                 [],
-                200
+                $count
             ),
             [
                 Statement::ENTRY_TYPE => Statement::ENTRY_TYPE_ARRAY,
@@ -62,7 +64,7 @@ class StatementTest extends TestCase
         }
 
         $this->assertNotEmpty($data);
-        $this->assertCount(100, $data);
+        $this->assertCount($count, $data);
         $this->assertEquals(1, $statement->getFetches());
     }
 

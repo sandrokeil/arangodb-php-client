@@ -10,10 +10,10 @@ declare(strict_types=1);
 
 namespace ArangoDb\Type;
 
-use ArangoDb\VpackStream;
-use ArangoDBClient\Urls;
+use ArangoDb\Http\VpackStream;
+use ArangoDb\Url;
 use Fig\Http\Message\RequestMethodInterface;
-use GuzzleHttp\Psr7\Request;
+use ArangoDb\Http\Request;
 use Psr\Http\Message\RequestInterface;
 
 final class UpdateDocument implements CollectionType
@@ -70,7 +70,7 @@ final class UpdateDocument implements CollectionType
     {
         return new Request(
             RequestMethodInterface::METHOD_PATCH,
-            Urls::URL_DOCUMENT . '/' . $this->collectionName . '/' . $this->id . '?' . http_build_query($this->options),
+            Url::DOCUMENT . '/' . $this->collectionName . '/' . $this->id . '?' . http_build_query($this->options),
             [],
             new VpackStream($this->data)
         );

@@ -11,9 +11,9 @@ declare(strict_types=1);
 
 namespace ArangoDb\Type;
 
-use ArangoDBClient\Urls;
+use ArangoDb\Url;
 use Fig\Http\Message\RequestMethodInterface;
-use GuzzleHttp\Psr7\Request;
+use ArangoDb\Http\Request;
 use Psr\Http\Message\RequestInterface;
 
 final class CountCollection implements CollectionType
@@ -49,7 +49,7 @@ final class CountCollection implements CollectionType
     {
         return new Request(
             RequestMethodInterface::METHOD_GET,
-            Urls::URL_COLLECTION . '/' . $this->collectionName . '/count'
+            Url::COLLECTION . '/' . $this->collectionName . '/count'
         );
     }
 

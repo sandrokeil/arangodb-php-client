@@ -12,10 +12,10 @@ declare(strict_types=1);
 namespace ArangoDb\Type;
 
 use ArangoDb\Exception\LogicException;
-use ArangoDb\VpackStream;
-use ArangoDBClient\Urls;
+use ArangoDb\Http\VpackStream;
+use ArangoDb\Url;
 use Fig\Http\Message\RequestMethodInterface;
-use GuzzleHttp\Psr7\Request;
+use ArangoDb\Http\Request;
 use Psr\Http\Message\RequestInterface;
 
 final class CreateCursor implements Type
@@ -77,7 +77,7 @@ final class CreateCursor implements Type
     {
         return new Request(
             RequestMethodInterface::METHOD_POST,
-            Urls::URL_CURSOR,
+            Url::CURSOR,
             [],
             new VpackStream($this->params)
         );
