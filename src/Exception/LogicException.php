@@ -15,4 +15,8 @@ use LogicException as PhpLogicException;
 
 class LogicException extends PhpLogicException implements ArangoDbException
 {
+    public static function notPossible(): self
+    {
+        return new self('Not possible at the moment, see ArangoDB docs.');
+    }
 }

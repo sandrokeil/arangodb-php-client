@@ -59,12 +59,21 @@ final class Vpack implements ArrayAccess, Countable
         // TODO
     }
 
-    public function append(Vpack $data)
+    public function append(Vpack $data): void
     {
         $this->data = array_merge($this->data, $data->toArray());
     }
 
-    public function count()
+    /**
+     * @param string $key
+     * @return mixed
+     */
+    public function access(string $key)
+    {
+        return $this->__get($key);
+    }
+
+    public function count(): int
     {
         return count($this->data);
     }

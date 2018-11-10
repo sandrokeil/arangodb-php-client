@@ -202,7 +202,7 @@ final class Client implements \Psr\Http\Client\ClientInterface
 
             if ($contentLength === 0
                 && $method !== 'HEAD'
-                && preg_match('/content-length: (\d+)/i', $message, $matches)
+                && 1 === preg_match('/content-length: (\d+)/i', $message, $matches)
             ) {
                 $contentLength = (int)$matches[1];
             }
@@ -306,7 +306,7 @@ final class Client implements \Psr\Http\Client\ClientInterface
 
             $this->close();
 
-            if (! $this->options[ClientOptions::OPTION_RECONNECT]) {
+            if (false === $this->options[ClientOptions::OPTION_RECONNECT]) {
                 throw ConnectionException::forRequest(
                     $request,
                     'Server has closed the connection already.',
@@ -318,7 +318,7 @@ final class Client implements \Psr\Http\Client\ClientInterface
         $endpoint = $this->options[ClientOptions::OPTION_ENDPOINT];
         $context = stream_context_create();
 
-        if (preg_match('/^ssl:\/\/.+/', $endpoint)) {
+        if (1 === preg_match('/^ssl:\/\/.+/', $endpoint)) {
             stream_context_set_option(
                 $context,
                 [
@@ -357,9 +357,7 @@ final class Client implements \Psr\Http\Client\ClientInterface
      */
     private function close(): void
     {
-        if (is_resource($this->handle)) {
-            fclose($this->handle);
-        }
+        fclose($this->handle);
         unset($this->handle);
     }
 }
