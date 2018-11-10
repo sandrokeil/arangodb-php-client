@@ -25,7 +25,7 @@ final class ServerException extends RuntimeException implements ClientExceptionI
      */
     private $request;
 
-    public static function for(RequestInterface $request, ResponseInterface $response): self
+    public static function with(RequestInterface $request, ResponseInterface $response): self
     {
         $self = new self(
             sprintf('Response with status code "%s" was returned.', $response->getStatusCode()),

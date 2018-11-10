@@ -22,7 +22,7 @@ final class RequestFailedException extends RuntimeException implements RequestEx
      */
     private $request;
 
-    public static function ofRequest(RequestInterface $request, Throwable $previousException = null)
+    public static function ofRequest(RequestInterface $request, Throwable $previousException = null): self
     {
         $self = new self(
             sprintf('Request to "%s" failed.', $request->getUri()),

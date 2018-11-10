@@ -20,7 +20,7 @@ final class TimeoutException extends RuntimeException implements NetworkExceptio
      */
     private $request;
 
-    public static function ofRequest(RequestInterface $request)
+    public static function ofRequest(RequestInterface $request): self
     {
         $self = new self(
             "Got a timeout while waiting for the server's response",

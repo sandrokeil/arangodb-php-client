@@ -70,18 +70,18 @@ final class VpackStream implements StreamInterface
         return $this->getContents();
     }
 
-    public function close()
+    public function close(): void
     {
         $this->data = '';
         $this->buffer = null;
     }
 
-    public function detach()
+    public function detach(): void
     {
         $this->close();
     }
 
-    public function getSize()
+    public function getSize(): int
     {
         if ($this->size === null) {
             $this->size = strlen($this->getContents());
@@ -90,12 +90,12 @@ final class VpackStream implements StreamInterface
         return $this->size;
     }
 
-    public function tell()
+    public function tell(): int
     {
         throw new \RuntimeException('Cannot determine the position of a VpackStream');
     }
 
-    public function eof()
+    public function eof(): bool
     {
         if ($this->buffer === null) {
             return false;
@@ -103,37 +103,48 @@ final class VpackStream implements StreamInterface
         return $this->buffer === '';
     }
 
-    public function isSeekable()
+    public function isSeekable(): bool
     {
         return false;
     }
 
-    public function seek($offset, $whence = SEEK_SET)
+    /**
+     * @param int $offset
+     * @param int $whence
+     */
+    public function seek($offset, $whence = SEEK_SET): void
     {
         throw new \RuntimeException('Cannot seek a VpackStream');
     }
 
-    public function rewind()
+    public function rewind(): void
     {
         $this->buffer = null;
     }
 
-    public function isWritable()
+    public function isWritable(): bool
     {
         return false;
     }
 
-    public function write($string)
+    /**
+     * @param string $string
+     */
+    public function write($string): void
     {
         throw new \RuntimeException('Cannot write a VpackStream');
     }
 
-    public function isReadable()
+    public function isReadable(): bool
     {
         return true;
     }
 
-    public function read($length)
+    /**
+     * @param int $length
+     * @return string
+     */
+    public function read($length): string
     {
         if ($this->buffer === null) {
             $this->buffer = $this->getContents();
@@ -153,7 +164,7 @@ final class VpackStream implements StreamInterface
         return $result;
     }
 
-    public function getContents()
+    public function getContents(): string
     {
         if ($this->data instanceof Vpack) {
             return $this->data->toJson();
@@ -170,6 +181,10 @@ final class VpackStream implements StreamInterface
         return $this->data;
     }
 
+    /**
+     * @param null $key
+     * @return array|mixed|null
+     */
     public function getMetadata($key = null)
     {
         $metadata = [

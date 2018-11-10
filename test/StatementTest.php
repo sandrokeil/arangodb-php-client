@@ -9,32 +9,10 @@
 
 namespace ArangoDbTest;
 
-use ArangoDb\Client;
 use ArangoDb\Statement;
-use PHPUnit\Framework\TestCase;
 
 class StatementTest extends TestCase
 {
-    /**
-     * @var Client
-     */
-    private $client;
-
-    public static function setUpBeforeClass()
-    {
-        TestUtil::createDatabase();
-    }
-
-    public static function tearDownAfterClass()
-    {
-        TestUtil::dropDatabase();
-    }
-
-    protected function setUp()
-    {
-        $this->client = TestUtil::getClient();
-    }
-
     /**
      * @test
      */
@@ -44,16 +22,16 @@ class StatementTest extends TestCase
 
         $statement = new Statement(
             $this->client,
-            \ArangoDb\Type\CreateCursor::with(
+            \ArangoDb\Type\Cursor::create(
                 'FOR i IN 1..' . $count . ' RETURN {"_key": i+1}',
                 [],
                 $count
-            ),
+            )->toRequest(),
             [
                 Statement::ENTRY_TYPE => Statement::ENTRY_TYPE_ARRAY,
             ]
         );
-        $this->assertEquals(0, $statement->getFetches());
+        $this->assertEquals(0, $statement->fetches());
 
         $data = [];
         $i = 0;
@@ -65,7 +43,7 @@ class StatementTest extends TestCase
 
         $this->assertNotEmpty($data);
         $this->assertCount($count, $data);
-        $this->assertEquals(1, $statement->getFetches());
+        $this->assertEquals(1, $statement->fetches());
     }
 
     /**
@@ -75,16 +53,16 @@ class StatementTest extends TestCase
     {
         $statement = new Statement(
             $this->client,
-            \ArangoDb\Type\CreateCursor::with(
+            \ArangoDb\Type\Cursor::create(
                 'FOR i IN 0..99 RETURN {"_key": i+1}',
                 [],
                 10
-            ),
+            )->toRequest(),
             [
                 Statement::ENTRY_TYPE => Statement::ENTRY_TYPE_ARRAY,
             ]
         );
-        $this->assertEquals(0, $statement->getFetches());
+        $this->assertEquals(0, $statement->fetches());
 
         $data = [];
         $i = 0;
@@ -96,7 +74,7 @@ class StatementTest extends TestCase
 
         $this->assertNotEmpty($data);
         $this->assertCount(100, $data);
-        $this->assertEquals(10, $statement->getFetches());
+        $this->assertEquals(10, $statement->fetches());
     }
 
     /**
@@ -106,11 +84,11 @@ class StatementTest extends TestCase
     {
         $statement = new Statement(
             $this->client,
-            \ArangoDb\Type\CreateCursor::with(
+            \ArangoDb\Type\Cursor::create(
                 'FOR i IN 0..99 RETURN {"_key": i+1}',
                 [],
                 10
-            ),
+            )->toRequest(),
             [
                 Statement::ENTRY_TYPE => Statement::ENTRY_TYPE_ARRAY,
             ]
@@ -126,20 +104,20 @@ class StatementTest extends TestCase
 
         $this->assertNotEmpty($data);
         $this->assertCount(100, $data);
-        $this->assertEquals(10, $statement->getFetches());
+        $this->assertEquals(10, $statement->fetches());
 
         $data = iterator_to_array($statement);
         $this->assertNotEmpty($data);
         $this->assertCount(100, $data);
-        $this->assertEquals(10, $statement->getFetches());
+        $this->assertEquals(10, $statement->fetches());
 
         $statement->rewind();
-        $this->assertEquals(1, $statement->getFetches());
+        $this->assertEquals(1, $statement->fetches());
 
-        $data = $statement->getAll();
+        $data = $statement->fetchAll();
         $this->assertNotEmpty($data);
         $this->assertCount(100, $data);
-        $this->assertEquals(10, $statement->getFetches());
+        $this->assertEquals(10, $statement->fetches());
     }
 
     /**
@@ -149,16 +127,16 @@ class StatementTest extends TestCase
     {
         $statement = new Statement(
             $this->client,
-            \ArangoDb\Type\CreateCursor::with('RETURN {"_key": 1}'),
+            \ArangoDb\Type\Cursor::create('RETURN {"_key": 1}')->toRequest(),
             [
                 Statement::ENTRY_TYPE => Statement::ENTRY_TYPE_ARRAY,
             ]
         );
 
-        $data = $statement->getAll();
+        $data = $statement->fetchAll();
         $this->assertNotEmpty($data);
         $this->assertEquals(1, $data[0]['_key']);
-        $this->assertEquals(1, $statement->getFetches());
+        $this->assertEquals(1, $statement->fetches());
     }
 
     /**
@@ -168,16 +146,16 @@ class StatementTest extends TestCase
     {
         $statement = new Statement(
             $this->client,
-            \ArangoDb\Type\CreateCursor::with('RETURN "test"'),
+            \ArangoDb\Type\Cursor::create('RETURN "test"')->toRequest(),
             [
                 Statement::ENTRY_TYPE => Statement::ENTRY_TYPE_ARRAY,
             ]
         );
 
-        $data = $statement->getAll();
+        $data = $statement->fetchAll();
         $this->assertNotEmpty($data);
         $this->assertEquals('test', $data[0]);
-        $this->assertEquals(1, $statement->getFetches());
+        $this->assertEquals(1, $statement->fetches());
     }
 
     /**
@@ -187,16 +165,16 @@ class StatementTest extends TestCase
     {
         $statement = new Statement(
             $this->client,
-            \ArangoDb\Type\CreateCursor::with('RETURN "test"'),
+            \ArangoDb\Type\Cursor::create('RETURN "test"')->toRequest(),
             [
                 Statement::ENTRY_TYPE => Statement::ENTRY_TYPE_JSON,
             ]
         );
 
-        $data = $statement->getAll();
+        $data = $statement->fetchAll();
         $this->assertNotEmpty($data);
         $this->assertEquals('["test"]', $data);
-        $this->assertEquals(1, $statement->getFetches());
+        $this->assertEquals(1, $statement->fetches());
     }
 
     /**
@@ -206,18 +184,18 @@ class StatementTest extends TestCase
     {
         $statement = new Statement(
             $this->client,
-            \ArangoDb\Type\CreateCursor::with(
+            \ArangoDb\Type\Cursor::create(
                 'FOR i IN 0..99 RETURN {"_key": i+1}',
                 [],
                 10
-            ),
+            )->toRequest(),
             [
                 Statement::ENTRY_TYPE => Statement::ENTRY_TYPE_JSON,
             ]
         );
-        $this->assertEquals(0, $statement->getFetches());
+        $this->assertEquals(0, $statement->fetches());
 
-        $data = $statement->getAll();
+        $data = $statement->fetchAll();
 
         $this->assertNotEmpty($data);
         $this->assertStringStartsWith(
@@ -228,6 +206,6 @@ class StatementTest extends TestCase
             '{"_key":93},{"_key":94},{"_key":95},{"_key":96},{"_key":97},{"_key":98},{"_key":99},{"_key":100}]',
             $data
         );
-        $this->assertEquals(10, $statement->getFetches());
+        $this->assertEquals(10, $statement->fetches());
     }
 }

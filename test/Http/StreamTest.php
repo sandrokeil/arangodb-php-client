@@ -11,10 +11,10 @@ declare(strict_types=1);
 
 namespace ArangoDbTest\Http;
 
-use InvalidArgumentException;
+use ArangoDb\Exception\InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use ReflectionProperty;
-use RuntimeException;
+use ArangoDb\Exception\RuntimeException;
 use ArangoDb\Http\Stream;
 
 use function curl_init;
@@ -502,7 +502,7 @@ class StreamTest extends TestCase
         $resource = fopen($this->tmpnam, 'r+');
         $this->stream->attach($resource);
 
-        $r = new ReflectionProperty($this->stream, 'resource');
+        $r = new ReflectionProperty($this->stream, 'handle');
         $r->setAccessible(true);
         $test = $r->getValue($this->stream);
         $this->assertSame($resource, $test);

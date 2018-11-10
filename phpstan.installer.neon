@@ -12,5 +12,3 @@ parameters:
 		- src/Http/Response.php
 		- src/Http/Uri.php
 		- src/Http/Stream.php
-	ignoreErrors:
-		- '#Function stream_context_set_option invoked with 2 parameters, 4 required#'

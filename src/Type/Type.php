@@ -16,6 +16,4 @@ use Psr\Http\Message\RequestInterface;
 interface Type
 {
     public function toRequest(): RequestInterface;
-
-    public function toJs(): string;
 }

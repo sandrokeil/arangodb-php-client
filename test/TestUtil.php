@@ -12,12 +12,16 @@ declare(strict_types=1);
 namespace ArangoDbTest;
 
 use ArangoDb\Client;
-use ArangoDb\Type\CreateDatabase;
-use ArangoDb\Type\DeleteDatabase;
+use ArangoDb\Exception\ArangoDbException;
+use ArangoDb\Http\Request;
+use ArangoDb\Http\VpackStream;
+use ArangoDb\Type\Database;
 use ArangoDb\ClientOptions;
 use ArangoDb\Url;
+use Fig\Http\Message\RequestMethodInterface;
 use Fig\Http\Message\StatusCodeInterface;
 use Psr\Http\Client\ClientInterface;
+use Psr\Http\Message\ResponseInterface;
 
 final class TestUtil
 {
@@ -53,7 +57,7 @@ final class TestUtil
                 'Accept' => [$type],
             ]
         );
-        $response = $client->sendRequest(CreateDatabase::with(self::getDatabaseName())->toRequest());
+        $response = $client->sendRequest(Database::create(self::getDatabaseName())->toRequest());
 
         if ($response->getStatusCode() !== StatusCodeInterface::STATUS_CREATED) {
             self::dropDatabase();
@@ -79,7 +83,19 @@ final class TestUtil
                 'Accept' => [$type],
             ]
         );
-        $client->sendRequest(DeleteDatabase::with(self::getDatabaseName())->toRequest());
+        $client->sendRequest(Database::delete(self::getDatabaseName())->toRequest());
+    }
+
+    public static function getResponseContent(ResponseInterface $response): string
+    {
+        $body = $response->getBody();
+
+        if ($body instanceof VpackStream) {
+            $content = $body->vpack()->toJson();
+        } else {
+            $content = $body->getContents();
+        }
+        return $content;
     }
 
     public static function getDatabaseName(): string
@@ -100,11 +116,16 @@ final class TestUtil
         return self::getSpecifiedConnectionParams();
     }
 
-    public static function deleteCollection(ClientInterface $connection, string $collection): void
+    public static function deleteCollection(ClientInterface $client, string $collection): void
     {
         try {
-            $connection->delete(Url::COLLECTION . '/' . $collection, []);
-        } catch (RequestFailedException $e) {
+            $client->sendRequest(
+                new Request(
+                    RequestMethodInterface::METHOD_DELETE,
+                    Url::COLLECTION . '/' . $collection
+                )
+            );
+        } catch (ArangoDbException $e) {
             // needed if test deletes collection
         }
     }

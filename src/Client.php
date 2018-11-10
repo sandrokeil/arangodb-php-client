@@ -34,11 +34,6 @@ final class Client implements \Psr\Http\Client\ClientInterface
     private const EOL = "\r\n";
 
     /**
-     * Separator between header and body
-     */
-    private const BODY_SEPARATOR = "\r\n\r\n";
-
-    /**
      * Connection handle
      *
      * @var resource
@@ -161,9 +156,9 @@ final class Client implements \Psr\Http\Client\ClientInterface
                 $this->close();
             }
 
-            [$httpCode, $headers, $body] = $this->parseMessage($result);
+            [$httpCode, $headers, $body] = HttpHelper::parseMessage($result);
         } catch (\Throwable $e) {
-            throw NetworkException::for($request, $e);
+            throw NetworkException::with($request, $e);
         }
 
         return new Response(
@@ -202,7 +197,7 @@ final class Client implements \Psr\Http\Client\ClientInterface
 
             if ($contentLength === 0
                 && $method !== 'HEAD'
-                && preg_match('/content-length: (\d+)/i', $message, $matches)
+                && 1 === preg_match('/content-length: (\d+)/i', $message, $matches)
             ) {
                 $contentLength = (int)$matches[1];
             }
@@ -217,42 +212,6 @@ final class Client implements \Psr\Http\Client\ClientInterface
         } while ($readTotal < $bodyLength && ! feof($this->handle));
 
         return $message;
-    }
-
-    /**
-     * Splits the message in HTTP status code, headers and body.
-     *
-     * @param string $message
-     * @return array Values are HTTP status code, PSR-7 headers and body
-     */
-    private function parseMessage(string $message): array
-    {
-        $startLine = null;
-        $headers = [];
-        [$headerLines, $body] = explode(self::BODY_SEPARATOR, $message, 2);
-        $headerLines = explode("\n", $headerLines);
-
-        foreach ($headerLines as $header) {
-            // Parse message headers
-            if ($startLine === null) {
-                $startLine = explode(' ', $header, 3);
-                continue;
-            }
-            $parts = explode(':', $header, 2);
-            $key = trim($parts[0]);
-            $value = isset($parts[1]) ? trim($parts[1]) : '';
-
-            if (! isset($headers[$key])) {
-                $headers[$key] = [];
-            }
-            $headers[$key][] = $value;
-        }
-
-        return [
-            (int) ($startLine[1] ?? 0),
-            $headers,
-            $body,
-        ];
     }
 
     /**
@@ -306,7 +265,7 @@ final class Client implements \Psr\Http\Client\ClientInterface
 
             $this->close();
 
-            if (! $this->options[ClientOptions::OPTION_RECONNECT]) {
+            if (false === $this->options[ClientOptions::OPTION_RECONNECT]) {
                 throw ConnectionException::forRequest(
                     $request,
                     'Server has closed the connection already.',
@@ -318,7 +277,7 @@ final class Client implements \Psr\Http\Client\ClientInterface
         $endpoint = $this->options[ClientOptions::OPTION_ENDPOINT];
         $context = stream_context_create();
 
-        if (preg_match('/^ssl:\/\/.+/', $endpoint)) {
+        if (1 === preg_match('/^ssl:\/\/.+/', $endpoint)) {
             stream_context_set_option(
                 $context,
                 [
@@ -357,9 +316,7 @@ final class Client implements \Psr\Http\Client\ClientInterface
      */
     private function close(): void
     {
-        if (is_resource($this->handle)) {
-            fclose($this->handle);
-        }
+        fclose($this->handle);
         unset($this->handle);
     }
 }
