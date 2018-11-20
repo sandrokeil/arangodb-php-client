@@ -5,3 +5,5 @@ clover.xml
 coveralls-upload.json
 phpunit.xml
 vendor/
+zephir/.tmp
+zephir/ext

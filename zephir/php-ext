@@ -1,0 +1,8 @@
+FROM vpack
+
+COPY ext/modules/arangodb.so /tmp/arangodb.so
+
+RUN mv /tmp/arangodb.so $(php-config --extension-dir) \
+    && rm -rf /tmp/* \
+    && echo "extension=arangodb.so" > /usr/local/etc/php/conf.d/arangodb.ini
+

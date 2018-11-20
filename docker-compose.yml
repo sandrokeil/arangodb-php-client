@@ -30,6 +30,38 @@ services:
     volumes:
       - "./:/app"
 
+  # To run tests docker-compose run --rm php-ext vendor/bin/phpunit
+  php-ext:
+    image: php-ext
+    build:
+      context: ./zephir
+      dockerfile: php-ext
+    environment:
+      USE_VPACK: "true"
+      PHP_IDE_CONFIG: "serverName=application"
+      XDEBUG_CONFIG: "remote_host=phpstorm"
+      arangodb_host: "tcp://arangodb:8529"
+      arangodb_username: ""
+      arangodb_password: ""
+      arangodb_dbname: testing
+    volumes:
+      - "./:/app"
+
+  # docker-compose run --rm --workdir "/app/zephir" zephir generate
+  # docker-compose run --rm --workdir "/app/zephir" zephir compile
+  # docker-compose build php-ext
+  zephir:
+    image: zephir
+    build:
+      context: ./env
+      dockerfile: zephir
+    environment:
+      PHP_IDE_CONFIG: "serverName=application"
+      XDEBUG_CONFIG: "remote_host=phpstorm"
+      ZEPHIRDIR: "/tmp/zephir"
+    volumes:
+    - "./:/app"
+
   arangodb:
     image: arangodb/arangodb:3.3.19
     ports:

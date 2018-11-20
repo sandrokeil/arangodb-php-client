@@ -43,3 +43,23 @@ Execute Velocypack tests with
 $ docker-compose run --rm vpack vendor/bin/phpunit
 ```
 
+## Zephir
+To convert a PHP file to Zephir run:
+
+```
+docker-compose run --rm php vendor/bin/php2zephir convert src/TransactionalClient.php zephir/arangodb/TransactionalClient.zep
+```
+
+To compile and build the PHP extension run:
+
+```
+docker-compose run --rm --workdir "/app/zephir" zephir generate
+docker-compose run --rm --workdir "/app/zephir" zephir compile
+docker-compose build php-ext
+```
+
+To test it run:
+
+```
+docker-compose run --rm php-ext php ext.php
+```

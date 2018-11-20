@@ -41,13 +41,13 @@ class TransactionalClient
         $actions = '';
         $collectionsWrite = [[]];
         $collectionsRead = [[]];
-        $return = [];
+        $returnIds = [];
         foreach ($this->types as $key => $type) {
             $collectionsWrite[] = $type->collectionsWrite();
             $collectionsWrite[] = $type->collectionsRead();
             // TODO multiple rIds
             $actions .= str_replace('var rId', 'var rId' . $key, $type->toJs());
-            $return[] = 'rId' . $key;
+            $returnIds[] = 'rId' . $key;
         }
         $collectionsWrite = array_merge(...$collectionsWrite);
         $collectionsRead = array_merge(...$collectionsRead);
@@ -57,7 +57,7 @@ class TransactionalClient
                 sprintf(
                     "function () {var db = require('@arangodb').db;%s return {%s}}",
                     $actions,
-                    implode(',', $return)
+                    implode(',', $returnIds)
                 ),
                 array_unique($collectionsWrite),
                 $params,
