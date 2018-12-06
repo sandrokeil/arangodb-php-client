@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace ArangoDb\Type;
 
-use ArangoDb\Exception\LogicException;
+use ArangoDb\Guard\Guard;
 use ArangoDb\Http\Request;
 use ArangoDb\Http\VpackStream;
 use ArangoDb\Url;
@@ -39,6 +39,13 @@ class Transaction implements TransactionType
      * @var string
      */
     private $action;
+
+    /**
+     * Guard
+     *
+     * @var Guard
+     */
+    private $guard;
 
     private function __construct(
         string $action,
@@ -91,5 +98,16 @@ class Transaction implements TransactionType
                 ]
             )
         );
+    }
+
+    public function useGuard(Guard $guard): Type
+    {
+        $this->guard = $guard;
+        return $this;
+    }
+
+    public function guard(): ?Guard
+    {
+        return $this->guard;
     }
 }

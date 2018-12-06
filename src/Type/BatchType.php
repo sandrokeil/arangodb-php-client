@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace ArangoDb\Type;
 
+use ArangoDb\Guard\Guard;
+
 interface BatchType extends Type
 {
     /**
@@ -35,4 +37,9 @@ interface BatchType extends Type
      * @return BatchType
      */
     public static function fromTypes(Type ...$types): self;
+
+    /**
+     * @return Guard[]|null
+     */
+    public function guards(): ?array;
 }

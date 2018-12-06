@@ -11,13 +11,14 @@ declare(strict_types=1);
 
 namespace ArangoDb\Type;
 
+use ArangoDb\Guard\Guard;
 use ArangoDb\Http\VpackStream;
 use ArangoDb\Url;
 use Fig\Http\Message\RequestMethodInterface;
 use ArangoDb\Http\Request;
 use Psr\Http\Message\RequestInterface;
 
-final class Index implements IndexType
+final class Index implements IndexType, GuardSupport
 {
     /**
      * @var string|null
@@ -43,6 +44,13 @@ final class Index implements IndexType
      * @var string
      */
     private $method;
+
+    /**
+     * Guard
+     *
+     * @var Guard
+     */
+    private $guard;
 
     private function __construct(
         ?string $name,
@@ -104,5 +112,16 @@ final class Index implements IndexType
             $this->method,
             Url::INDEX . $this->uri
         );
+    }
+
+    public function useGuard(Guard $guard): Type
+    {
+        $this->guard = $guard;
+        return $this;
+    }
+
+    public function guard(): ?Guard
+    {
+        return $this->guard;
     }
 }

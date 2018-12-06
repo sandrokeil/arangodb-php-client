@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace ArangoDb\Type;
 
 use ArangoDb\Exception\LogicException;
+use ArangoDb\Guard\Guard;
 use ArangoDb\Http\VpackStream;
 use ArangoDb\Url;
 use Fig\Http\Message\RequestMethodInterface;
@@ -49,6 +50,13 @@ final class Document implements DocumentType, Transactional
      * @var string
      */
     private $method;
+
+    /**
+     * Guard
+     *
+     * @var Guard
+     */
+    private $guard;
 
     /**
      * @param null|string $collectionName
@@ -362,16 +370,8 @@ final class Document implements DocumentType, Transactional
                     return 'var rId = db.' . $this->collectionName
                         . '.removeByKeys(' . json_encode($this->data) . ');';
                 case RequestMethodInterface::METHOD_PATCH:
-
-
-
-
                     break;
                 default:
-
-
-
-
                     break;
             }
         }
@@ -379,21 +379,12 @@ final class Document implements DocumentType, Transactional
         if (null !== $this->id) {
             switch ($this->method) {
                 case RequestMethodInterface::METHOD_POST:
-
-
-
                     break;
                 case RequestMethodInterface::METHOD_PUT:
-
-
-
                     break;
                 case RequestMethodInterface::METHOD_DELETE:
                     return 'var rId = db._remove("' . $this->id . '", ' . json_encode($this->options) . ');';
                 case RequestMethodInterface::METHOD_PATCH:
-
-
-
                     break;
                 default:
                     return 'var rId = db._document("' . $this->id . '");';
@@ -421,5 +412,16 @@ final class Document implements DocumentType, Transactional
     private function determineCollectionName(): string
     {
         return $this->collectionName ?: substr($this->id, 0, strpos($this->id, '/') - 1);
+    }
+
+    public function useGuard(Guard $guard): Type
+    {
+        $this->guard = $guard;
+        return $this;
+    }
+
+    public function guard(): ?Guard
+    {
+        return $this->guard;
     }
 }

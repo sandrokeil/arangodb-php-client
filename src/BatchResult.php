@@ -12,6 +12,8 @@ declare(strict_types=1);
 namespace ArangoDb;
 
 use ArangoDb\Exception\InvalidArgumentException;
+use ArangoDb\Exception\LogicException;
+use ArangoDb\Guard\Guard;
 use ArangoDb\Http\Response;
 use ArangoDb\Type\BatchType;
 use Countable;
@@ -59,6 +61,32 @@ final class BatchResult implements Countable, Iterator
             }
         }
         return $self;
+    }
+
+    public function validateBatch(BatchType $batch): void
+    {
+        $guards = $batch->guards();
+
+        if ($guards === null) {
+            throw new LogicException('No guards are provided in Batch.');
+        }
+
+        $this->validate(... $guards);
+    }
+
+    public function validate(Guard ...$guards): void
+    {
+        foreach ($guards as $guard) {
+            if ($guard->contentId() === null) {
+                foreach ($this->responses as $response) {
+                    $guard($response);
+                }
+                continue;
+            }
+            if ($response = $this->responses[$guard->contentId()] ?? null) {
+                $guard($response);
+            }
+        }
     }
 
     public function response($contentId): ?ResponseInterface

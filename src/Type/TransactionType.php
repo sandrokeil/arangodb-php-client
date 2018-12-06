@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace ArangoDb\Type;
 
-interface TransactionType extends Type
+interface TransactionType extends GuardSupport
 {
     /**
      * @see https://docs.arangodb.com/3.3/HTTP/Transaction/#execute-transaction

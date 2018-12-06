@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace ArangoDb\Type;
 
-interface DocumentType extends Type
+interface DocumentType extends GuardSupport
 {
     public const FLAG_RETURN_OLD = 1;
     public const FLAG_WAIT_FOR_SYNC = 2;

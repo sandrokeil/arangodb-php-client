@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace ArangoDb\Type;
 
+use ArangoDb\Guard\Guard;
 use ArangoDb\Http\Request;
 use ArangoDb\Http\VpackStream;
 use ArangoDb\Url;
@@ -38,6 +39,13 @@ final class Collection implements CollectionType
      * @var string
      */
     private $method;
+
+    /**
+     * Guard
+     *
+     * @var Guard
+     */
+    private $guard;
 
     private function __construct(
         ?string $name,
@@ -165,5 +173,16 @@ final class Collection implements CollectionType
             [],
             new VpackStream($this->options)
         );
+    }
+
+    public function useGuard(Guard $guard): Type
+    {
+        $this->guard = $guard;
+        return $this;
+    }
+
+    public function guard(): ?Guard
+    {
+        return $this->guard;
     }
 }

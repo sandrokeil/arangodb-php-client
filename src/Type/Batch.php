@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace ArangoDb\Type;
 
+use ArangoDb\Exception\GuardContentIdCollisionException;
+use ArangoDb\Guard\Guard;
 use ArangoDb\Http\Request;
 use ArangoDb\Url;
 use Fig\Http\Message\RequestMethodInterface;
@@ -21,11 +23,27 @@ final class Batch implements BatchType
     /**
      * @var Type[]
      */
-    private $types;
+    private $types = [];
+
+    /**
+     * @var Guard[]
+     */
+    private $guards;
 
     public function __construct(Type ...$types)
     {
-        $this->types = $types;
+        foreach ($types as $key => $type) {
+            if ($type instanceof GuardSupport && $guard = $type->guard()) {
+                if ($contentId = $guard->contentId()) {
+                    $key = $guard->contentId();
+                }
+                $this->guards[] = $guard;
+            }
+            if (isset($this->types[$key])) {
+                throw GuardContentIdCollisionException::withType($type);
+            }
+            $this->types[$key] = $type;
+        }
     }
 
     public static function fromTypes(Type ...$types): BatchType
@@ -61,6 +79,11 @@ final class Batch implements BatchType
         $request->getBody()->rewind();
 
         return $request;
+    }
+
+    public function guards(): ?array
+    {
+        return $this->guards;
     }
 
     /**

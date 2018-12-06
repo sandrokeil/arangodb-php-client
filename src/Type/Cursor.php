@@ -34,7 +34,6 @@ final class Cursor implements CursorType
      */
     private $method;
 
-
     private function __construct(
         string $uri,
         string $method,

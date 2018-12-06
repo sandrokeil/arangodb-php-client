@@ -10,6 +10,7 @@ declare(strict_types=1);
 
 namespace ArangoDb\Type;
 
+use ArangoDb\Guard\Guard;
 use ArangoDb\Http\VpackStream;
 use ArangoDb\Url;
 use Fig\Http\Message\RequestMethodInterface;
@@ -37,6 +38,13 @@ final class Database implements DatabaseType
      * @var string
      */
     private $method;
+
+    /**
+     * Guard
+     *
+     * @var Guard
+     */
+    private $guard;
 
     private function __construct(
         ?string $name,
@@ -91,5 +99,16 @@ final class Database implements DatabaseType
             [],
             new VpackStream($this->options)
         );
+    }
+
+    public function useGuard(Guard $guard): Type
+    {
+        $this->guard = $guard;
+        return $this;
+    }
+
+    public function guard(): ?Guard
+    {
+        return $this->guard;
     }
 }

@@ -10,7 +10,7 @@ declare(strict_types=1);
 
 namespace ArangoDb\Type;
 
-interface DatabaseType extends Type
+interface DatabaseType extends GuardSupport
 {
     /**
      * @see https://docs.arangodb.com/3.3/HTTP/Database/DatabaseManagement.html#create-database

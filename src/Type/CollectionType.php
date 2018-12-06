@@ -15,7 +15,7 @@ namespace ArangoDb\Type;
  * @see https://docs.arangodb.com/3.3/HTTP/Collection/
  * @see https://docs.arangodb.com/3.3/Manual/Appendix/References/CollectionObject.html
  */
-interface CollectionType extends Type
+interface CollectionType extends GuardSupport
 {
     /**
      * Create new collection

@@ -12,7 +12,7 @@ namespace ArangoDb\Exception;
 use Psr\Http\Client\NetworkExceptionInterface;
 use Psr\Http\Message\RequestInterface;
 
-class ConnectionException extends RuntimeException implements NetworkExceptionInterface
+final class ConnectionException extends RuntimeException implements NetworkExceptionInterface
 {
     /**
      * @var RequestInterface
