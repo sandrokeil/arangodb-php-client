@@ -14,8 +14,8 @@ namespace ArangoDb\Type;
 interface TransactionType extends GuardSupport
 {
     /**
-     * @see https://docs.arangodb.com/3.3/HTTP/Transaction/#execute-transaction
-     * @see https://docs.arangodb.com/3.3/Manual/Transactions/TransactionInvocation.html#execute-transaction
+     * @see https://docs.arangodb.com/3.4/HTTP/Transaction/#execute-transaction
+     * @see https://docs.arangodb.com/3.4/Manual/Transactions/TransactionInvocation.html#execute-transaction
      *
      * @param string $action
      * @param array $write

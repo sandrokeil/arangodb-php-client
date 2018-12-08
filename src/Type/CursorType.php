@@ -14,7 +14,7 @@ namespace ArangoDb\Type;
 interface CursorType extends Type
 {
     /**
-     * @see https://docs.arangodb.com/3.3/HTTP/AqlQueryCursor/AccessingCursors.html
+     * @see https://docs.arangodb.com/3.4/HTTP/AqlQueryCursor/AccessingCursors.html
      *
      * @param string $query
      * @param array $bindVars
@@ -34,7 +34,7 @@ interface CursorType extends Type
     ): self;
 
     /**
-     * @see https://docs.arangodb.com/3.3/HTTP/AqlQueryCursor/AccessingCursors.html#delete-cursor
+     * @see https://docs.arangodb.com/3.4/HTTP/AqlQueryCursor/AccessingCursors.html#delete-cursor
      *
      * @param string $cursorId
      * @return CursorType
@@ -42,7 +42,7 @@ interface CursorType extends Type
     public static function delete(string $cursorId): self;
 
     /**
-     * @see https://docs.arangodb.com/3.3/HTTP/AqlQueryCursor/AccessingCursors.html#read-next-batch-from-cursor
+     * @see https://docs.arangodb.com/3.4/HTTP/AqlQueryCursor/AccessingCursors.html#read-next-batch-from-cursor
      *
      * @param string $cursorId
      * @return CursorType

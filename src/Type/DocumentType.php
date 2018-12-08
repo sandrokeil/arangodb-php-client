@@ -27,34 +27,25 @@ interface DocumentType extends GuardSupport
     public const TYPE_PATH = 'path';
 
     /**
-     * @see https://docs.arangodb.com/3.3/HTTP/Document/WorkingWithDocuments.html#read-document
-     * @see https://docs.arangodb.com/3.3/Manual/DataModeling/Documents/DocumentMethods.html#document
+     * @see https://docs.arangodb.com/3.4/HTTP/Document/WorkingWithDocuments.html#read-document
+     * @see https://docs.arangodb.com/3.4/Manual/DataModeling/Documents/DocumentMethods.html#document
      *
-     * @param string $id
+     * @param string $id The document handle
      * @return DocumentType
      */
     public static function read(string $id): self;
 
     /**
-     * @see https://docs.arangodb.com/3.3/HTTP/Document/WorkingWithDocuments.html#read-document-header
+     * @see https://docs.arangodb.com/3.4/HTTP/Document/WorkingWithDocuments.html#read-document-header
      *
-     * @param string $id
+     * @param string $id The document handle
      * @return DocumentType
      */
     public static function readHeader(string $id): self;
 
     /**
-     * @see https://docs.arangodb.com/3.3/HTTP/Document/WorkingWithDocuments.html#read-all-documents
-     *
-     * @param string $collectionName
-     * @param string $type
-     * @return DocumentType
-     */
-    public static function readAll(string $collectionName, string $type): self;
-
-    /**
-     * @see https://docs.arangodb.com/3.3/Manual/DataModeling/Documents/DocumentMethods.html#insert
-     * @see https://docs.arangodb.com/3.3/HTTP/Document/WorkingWithDocuments.html#create-document
+     * @see https://docs.arangodb.com/3.4/Manual/DataModeling/Documents/DocumentMethods.html#insert
+     * @see https://docs.arangodb.com/3.4/HTTP/Document/WorkingWithDocuments.html#create-document
      *
      * @param string $collectionName
      * @param array $docs
@@ -68,8 +59,8 @@ interface DocumentType extends GuardSupport
     ): self;
 
     /**
-     * @see https://docs.arangodb.com/3.3/HTTP/Document/WorkingWithDocuments.html#removes-multiple-documents
-     * @see https://docs.arangodb.com/3.3/Manual/DataModeling/Documents/DocumentMethods.html#remove-by-keys
+     * @see https://docs.arangodb.com/3.4/HTTP/Document/WorkingWithDocuments.html#removes-multiple-documents
+     * @see https://docs.arangodb.com/3.4/Manual/DataModeling/Documents/DocumentMethods.html#remove-by-keys
      *
      * @param string $collectionName
      * @param array $keys
@@ -83,10 +74,10 @@ interface DocumentType extends GuardSupport
     ): self;
 
     /**
-     * @see https://docs.arangodb.com/3.3/HTTP/Document/WorkingWithDocuments.html#removes-a-document
-     * @see https://docs.arangodb.com/3.3/Manual/DataModeling/Documents/DatabaseMethods.html#remove
+     * @see https://docs.arangodb.com/3.4/HTTP/Document/WorkingWithDocuments.html#removes-a-document
+     * @see https://docs.arangodb.com/3.4/Manual/DataModeling/Documents/DatabaseMethods.html#remove
      *
-     * @param string $id
+     * @param string $id The document handle
      * @param int $flags
      * @return DocumentType
      */
@@ -96,21 +87,8 @@ interface DocumentType extends GuardSupport
     ): DocumentType;
 
     /**
-     * @see https://docs.arangodb.com/3.3/HTTP/SimpleQuery/#remove-documents-by-example
-     * @see https://docs.arangodb.com/3.3/Manual/DataModeling/Documents/DocumentMethods.html#remove-by-example
-     *
-     * @param string $collectionName
-     * @param array $example
-     * @return DocumentType
-     */
-    public static function deleteBy(
-        string $collectionName,
-        array $example
-    ): DocumentType;
-
-    /**
-     * @see https://docs.arangodb.com/3.3/HTTP/Document/WorkingWithDocuments.html#update-documents
-     * @see https://docs.arangodb.com/3.3/Manual/DataModeling/Documents/DocumentMethods.html#update
+     * @see https://docs.arangodb.com/3.4/HTTP/Document/WorkingWithDocuments.html#update-documents
+     * @see https://docs.arangodb.com/3.4/Manual/DataModeling/Documents/DocumentMethods.html#update
      *
      * @param string $collectionName
      * @param array $data
@@ -124,10 +102,10 @@ interface DocumentType extends GuardSupport
     ): DocumentType;
 
     /**
-     * @see https://docs.arangodb.com/3.3/HTTP/Document/WorkingWithDocuments.html#update-document
-     * @see https://docs.arangodb.com/3.3/Manual/DataModeling/Documents/DocumentMethods.html#update
+     * @see https://docs.arangodb.com/3.4/HTTP/Document/WorkingWithDocuments.html#update-document
+     * @see https://docs.arangodb.com/3.4/Manual/DataModeling/Documents/DocumentMethods.html#update
      *
-     * @param string $id
+     * @param string $id The document handle
      * @param array $data
      * @param int $flags
      * @return DocumentType
@@ -139,8 +117,8 @@ interface DocumentType extends GuardSupport
     ): DocumentType;
 
     /**
-     * @see https://docs.arangodb.com/3.3/HTTP/Document/WorkingWithDocuments.html#replace-documents
-     * @see https://docs.arangodb.com/3.3/Manual/DataModeling/Documents/DocumentMethods.html#replace
+     * @see https://docs.arangodb.com/3.4/HTTP/Document/WorkingWithDocuments.html#replace-documents
+     * @see https://docs.arangodb.com/3.4/Manual/DataModeling/Documents/DocumentMethods.html#replace
      *
      * @param string $collectionName
      * @param array $data
@@ -154,10 +132,10 @@ interface DocumentType extends GuardSupport
     ): DocumentType;
 
     /**
-     * @see https://docs.arangodb.com/3.3/HTTP/Document/WorkingWithDocuments.html#replace-document
-     * @see https://docs.arangodb.com/3.3/Manual/DataModeling/Documents/DocumentMethods.html#replace
+     * @see https://docs.arangodb.com/3.4/HTTP/Document/WorkingWithDocuments.html#replace-document
+     * @see https://docs.arangodb.com/3.4/Manual/DataModeling/Documents/DocumentMethods.html#replace
      *
-     * @param string $id
+     * @param string $id The document handle
      * @param array $data
      * @param int $flags
      * @return DocumentType

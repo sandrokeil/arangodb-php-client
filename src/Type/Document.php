@@ -101,21 +101,6 @@ final class Document implements DocumentType, Transactional
         );
     }
 
-    public static function readAll(string $collectionName, string $type): DocumentType
-    {
-        return new self(
-            $collectionName,
-            null,
-            Url::ALL_KEYS,
-            RequestMethodInterface::METHOD_PUT,
-            [],
-            [
-                'collection' => $collectionName,
-                'type' => $type,
-            ]
-        );
-    }
-
     public static function create(
         string $collectionName,
         array $docs,
@@ -186,23 +171,6 @@ final class Document implements DocumentType, Transactional
             $options['silent'] = true;
         }
         return new self(null, $id, Url::DOCUMENT . '/' . $id, RequestMethodInterface::METHOD_DELETE, $options);
-    }
-
-    public static function deleteBy(
-        string $collectionName,
-        array $example
-    ): DocumentType {
-        return new self(
-            $collectionName,
-            null,
-            Url::REMOVE_BY_EXAMPLE,
-            RequestMethodInterface::METHOD_PUT,
-            [],
-            [
-                'collection' => $collectionName,
-                'example' => $example,
-            ]
-        );
     }
 
     public static function update(
@@ -359,17 +327,28 @@ final class Document implements DocumentType, Transactional
                 case RequestMethodInterface::METHOD_POST:
                     return 'var rId = db.' . $this->collectionName
                         . '.insert(' . json_encode($this->data) . ', ' . json_encode($this->options) . ');';
-                case RequestMethodInterface::METHOD_PUT:
-                    if ($this->uri === Url::REMOVE_BY_EXAMPLE) {
-                        return 'var rId = db.' . $this->collectionName
-                            . '.removeByExample(' . json_encode($this->data) . ', '
-                            . (! empty($this->options['waitForSync']) ? 'true' : 'false') . ');';
-                    }
-                    break;
                 case RequestMethodInterface::METHOD_DELETE:
                     return 'var rId = db.' . $this->collectionName
                         . '.removeByKeys(' . json_encode($this->data) . ');';
+
+                case RequestMethodInterface::METHOD_PUT:
                 case RequestMethodInterface::METHOD_PATCH:
+                    $function = $this->method === RequestMethodInterface::METHOD_PUT ? 'replace' : 'update';
+
+                    $keys = array_map(function ($doc) {
+                        if (isset($doc['_key'])) {
+                            return ['_key' => $doc['_key']];
+                        }
+                        if (isset($doc['_id'])) {
+                            return ['_id' => $doc['_id']];
+                        }
+                        throw new LogicException('Cannot perform document updates due missing _key or _id value.');
+                    }, $this->data);
+
+                    return 'var rId = db.' . $this->collectionName
+                        . '.' . $function . '(' . json_encode($keys) . ', '
+                        . json_encode($this->data) . ', '
+                        . json_encode($this->options) . ');';
                     break;
                 default:
                     break;
@@ -378,19 +357,21 @@ final class Document implements DocumentType, Transactional
 
         if (null !== $this->id) {
             switch ($this->method) {
-                case RequestMethodInterface::METHOD_POST:
-                    break;
                 case RequestMethodInterface::METHOD_PUT:
-                    break;
+                    return 'var rId = db._replace("' . $this->id . '", '
+                        . json_encode($this->data) . ', '
+                        . json_encode($this->options) . ');';
                 case RequestMethodInterface::METHOD_DELETE:
                     return 'var rId = db._remove("' . $this->id . '", ' . json_encode($this->options) . ');';
                 case RequestMethodInterface::METHOD_PATCH:
-                    break;
+                    return 'var rId = db._update("' . $this->id . '", '
+                        . json_encode($this->data) . ', '
+                        . json_encode($this->options) . ');';
                 default:
                     return 'var rId = db._document("' . $this->id . '");';
             }
         }
-        throw new LogicException('The values id and collectionName not set.');
+        throw new LogicException('This operation is not supported');
     }
 
     public function collectionsRead(): array
@@ -411,7 +392,7 @@ final class Document implements DocumentType, Transactional
 
     private function determineCollectionName(): string
     {
-        return $this->collectionName ?: substr($this->id, 0, strpos($this->id, '/') - 1);
+        return $this->collectionName ?: substr($this->id, 0, strpos($this->id, '/'));
     }
 
     public function useGuard(Guard $guard): Type

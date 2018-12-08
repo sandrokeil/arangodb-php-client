@@ -13,7 +13,7 @@ namespace ArangoDb\Type;
 interface DatabaseType extends GuardSupport
 {
     /**
-     * @see https://docs.arangodb.com/3.3/HTTP/Database/DatabaseManagement.html#create-database
+     * @see https://docs.arangodb.com/3.4/HTTP/Database/DatabaseManagement.html#create-database
      *
      * @param string $databaseName
      * @param array $options
@@ -22,7 +22,7 @@ interface DatabaseType extends GuardSupport
     public static function create(string $databaseName, array $options = []): self;
 
     /**
-     * @see https://docs.arangodb.com/3.3/HTTP/Database/DatabaseManagement.html#drop-database
+     * @see https://docs.arangodb.com/3.4/HTTP/Database/DatabaseManagement.html#drop-database
      *
      * @param string $databaseName
      * @return DatabaseType
@@ -30,21 +30,21 @@ interface DatabaseType extends GuardSupport
     public static function delete(string $databaseName): self;
 
     /**
-     * @see https://docs.arangodb.com/3.3/HTTP/Database/DatabaseManagement.html#information-of-the-database
+     * @see https://docs.arangodb.com/3.4/HTTP/Database/DatabaseManagement.html#information-of-the-database
      *
      * @return DatabaseType
      */
     public static function info(): self;
 
     /**
-     * @see https://docs.arangodb.com/3.3/HTTP/Database/DatabaseManagement.html#list-of-accessible-databases
+     * @see https://docs.arangodb.com/3.4/HTTP/Database/DatabaseManagement.html#list-of-accessible-databases
      *
      * @return DatabaseType
      */
     public static function listAccessible(): self;
 
     /**
-     * @see https://docs.arangodb.com/3.3/HTTP/Database/DatabaseManagement.html#list-of-databases
+     * @see https://docs.arangodb.com/3.4/HTTP/Database/DatabaseManagement.html#list-of-databases
      *
      * @return DatabaseType
      */

@@ -31,7 +31,7 @@ interface BatchType extends Type
     public const BODY_SEPARATOR = "\r\n\r\n";
 
     /**
-     * @see https://docs.arangodb.com/3.3/HTTP/BatchRequest/
+     * @see https://docs.arangodb.com/3.4/HTTP/BatchRequest/
      *
      * @param Type ...$types
      * @return BatchType

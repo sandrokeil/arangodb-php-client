@@ -102,24 +102,6 @@ class DocumentTest extends TestCase
 
     /**
      * @test
-     * @depends it_inserts_documents
-     */
-    public function it_reads_documents(array $keys): array
-    {
-        $response = $this->client->sendRequest(Document::readAll(self::COLLECTION_NAME, Document::TYPE_ID)->toRequest());
-
-        $content = TestUtil::getResponseContent($response);
-
-        $this->assertEquals(StatusCodeInterface::STATUS_CREATED, $response->getStatusCode());
-
-        $data = json_decode($content, true);
-        $this->assertTrue(count($data['result']) >= 3);
-
-        return $keys;
-    }
-
-    /**
-     * @test
      * @depends it_reads_document
      */
     public function it_deletes_document(string $id): void
@@ -131,7 +113,7 @@ class DocumentTest extends TestCase
 
     /**
      * @test
-     * @depends it_reads_documents
+     * @depends it_inserts_documents
      */
     public function it_deletes_documents(array $keys): void
     {

@@ -53,7 +53,7 @@ class IndexTest extends TestCase
 
         $content = TestUtil::getResponseContent($response);
 
-        $this->assertStringStartsWith('{"code":201', $content);
+        $this->assertNotFalse(strpos($content, '"code":201'));
     }
 
     /**
@@ -83,7 +83,7 @@ class IndexTest extends TestCase
         $this->assertEquals(StatusCodeInterface::STATUS_OK, $response->getStatusCode());
 
         $content = TestUtil::getResponseContent($response);
-        $this->assertStringStartsWith('{"code":200', $content);
+        $this->assertNotFalse(strpos($content, '"code":200'));
         return $indexName;
     }
 
@@ -98,6 +98,7 @@ class IndexTest extends TestCase
         $this->assertEquals(StatusCodeInterface::STATUS_OK, $response->getStatusCode());
 
         $content = TestUtil::getResponseContent($response);
-        $this->assertStringStartsWith('{"code":200', $content);
+
+        $this->assertNotFalse(strpos($content, '"code":200'));
     }
 }

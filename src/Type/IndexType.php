@@ -14,8 +14,8 @@ namespace ArangoDb\Type;
 interface IndexType extends Type
 {
     /**
-     * @see https://docs.arangodb.com/3.3/HTTP/Indexes/WorkingWith.html#read-all-indexes-of-a-collection
-     * @see https://docs.arangodb.com/3.3/Manual/Indexing/WorkingWithIndexes.html#listing-all-indexes-of-a-collection
+     * @see https://docs.arangodb.com/3.4/HTTP/Indexes/WorkingWith.html#read-all-indexes-of-a-collection
+     * @see https://docs.arangodb.com/3.4/Manual/Indexing/WorkingWithIndexes.html#listing-all-indexes-of-a-collection
      *
      * @param string $collectionName
      * @return IndexType
@@ -23,8 +23,8 @@ interface IndexType extends Type
     public static function listAll(string $collectionName): self;
 
     /**
-     * @see https://docs.arangodb.com/3.3/HTTP/Indexes/WorkingWith.html#read-index
-     * @see https://docs.arangodb.com/3.3/Manual/Indexing/WorkingWithIndexes.html#fetching-an-index-by-handle
+     * @see https://docs.arangodb.com/3.4/HTTP/Indexes/WorkingWith.html#read-index
+     * @see https://docs.arangodb.com/3.4/Manual/Indexing/WorkingWithIndexes.html#fetching-an-index-by-handle
      *
      * @param string $indexName
      * @return IndexType
@@ -32,8 +32,8 @@ interface IndexType extends Type
     public static function info(string $indexName): self;
 
     /**
-     * @see https://docs.arangodb.com/3.3/HTTP/Indexes/WorkingWith.html#create-index
-     * @see https://docs.arangodb.com/3.3/Manual/Indexing/WorkingWithIndexes.html#creating-an-index
+     * @see https://docs.arangodb.com/3.4/HTTP/Indexes/WorkingWith.html#create-index
+     * @see https://docs.arangodb.com/3.4/Manual/Indexing/WorkingWithIndexes.html#creating-an-index
      *
      * @param string $collectionName
      * @param array $options
@@ -42,8 +42,8 @@ interface IndexType extends Type
     public static function create(string $collectionName, array $options = []): self;
 
     /**
-     * @see https://docs.arangodb.com/3.3/HTTP/Indexes/WorkingWith.html#delete-index
-     * @see https://docs.arangodb.com/3.3/Manual/Indexing/WorkingWithIndexes.html#dropping-an-index
+     * @see https://docs.arangodb.com/3.4/HTTP/Indexes/WorkingWith.html#delete-index
+     * @see https://docs.arangodb.com/3.4/Manual/Indexing/WorkingWithIndexes.html#dropping-an-index
      *
      * @param string $indexName
      * @return IndexType
