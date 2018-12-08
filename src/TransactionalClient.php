@@ -11,16 +11,18 @@ declare(strict_types=1);
 
 namespace ArangoDb;
 
+use ArangoDb\Http\Response;
 use ArangoDb\Type\Batch;
 use ArangoDb\Type\GuardSupport;
 use ArangoDb\Type\Transaction as TransactionType;
 use ArangoDb\Type\Transactional;
 use ArangoDb\Type\Type;
+use Fig\Http\Message\StatusCodeInterface;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
-class TransactionalClient implements ClientInterface
+final class TransactionalClient implements ClientInterface
 {
     /**
      * @var ClientInterface
@@ -32,16 +34,19 @@ class TransactionalClient implements ClientInterface
      *
      * @var Type[]
      */
-    private $types;
+    private $types = [];
 
     /**
      * Types
      *
      * @var Transactional[]
      */
-    private $transactionalTypes;
+    private $transactionalTypes = [];
 
-
+    /**
+     * TransactionalClient constructor.
+     * @param ClientInterface $client
+     */
     public function __construct(ClientInterface $client)
     {
         $this->client = $client;
@@ -52,12 +57,32 @@ class TransactionalClient implements ClientInterface
         return $this->client->sendRequest($request);
     }
 
+    /**
+     * Sends types and transactional types. Type responses are validated via guards. Transactional types must be
+     * manually validated via returned response. You can also use guards for this.
+     *
+     * @param array $params
+     * @param bool $waitForSync
+     * @return ResponseInterface
+     * @throws \Psr\Http\Client\ClientExceptionInterface
+     */
     public function send(array $params = [], bool $waitForSync = false): ResponseInterface
     {
         $actions = '';
         $collectionsWrite = [[]];
         $collectionsRead = [[]];
         $return = [];
+
+        if (! empty($this->types)) {
+            $batch = Batch::fromTypes(...$this->types);
+            $responseBatch = $this->client->sendRequest($batch->toRequest());
+            BatchResult::fromResponse($responseBatch)->validateBatch($batch);
+        }
+
+        if (empty($this->transactionalTypes)) {
+            return new Response(StatusCodeInterface::STATUS_OK);
+        }
+
         foreach ($this->transactionalTypes as $key => $type) {
             $collectionsWrite[] = $type->collectionsWrite();
             $collectionsWrite[] = $type->collectionsRead();
@@ -72,12 +97,6 @@ class TransactionalClient implements ClientInterface
         }
         $collectionsWrite = array_merge(...$collectionsWrite);
         $collectionsRead = array_merge(...$collectionsRead);
-
-        if (! empty($this->types)) {
-            $batch = Batch::fromTypes(...$this->types);
-            $responseBatch = $this->client->sendRequest($batch->toRequest());
-            BatchResult::fromResponse($responseBatch)->validateBatch($batch);
-        }
 
         $response = $this->client->sendRequest(
             TransactionType::with(
@@ -99,6 +118,11 @@ class TransactionalClient implements ClientInterface
         return $response;
     }
 
+    /**
+     * Add type
+     *
+     * @param Type $type
+     */
     public function add(Type $type): void
     {
         if ($type instanceof Transactional) {
@@ -108,6 +132,11 @@ class TransactionalClient implements ClientInterface
         $this->types[] = $type;
     }
 
+    /**
+     * Adds multiple types
+     *
+     * @param Type ...$types
+     */
     public function addList(Type ...$types): void
     {
         foreach ($types as $type) {
@@ -117,5 +146,34 @@ class TransactionalClient implements ClientInterface
             }
             $this->types[] = $type;
         }
+    }
+
+    /**
+     * Counts non transactional types
+     *
+     * @return int
+     */
+    public function countTypes(): int
+    {
+        return count($this->types);
+    }
+
+    /**
+     * Counts transactional types
+     *
+     * @return int
+     */
+    public function countTransactionalTypes(): int
+    {
+        return count($this->transactionalTypes);
+    }
+
+    /**
+     * Resets all types and transactional types
+     */
+    public function reset(): void
+    {
+        $this->types = [];
+        $this->transactionalTypes = [];
     }
 }

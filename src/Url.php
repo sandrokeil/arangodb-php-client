@@ -9,7 +9,7 @@
 
 namespace ArangoDb;
 
-class Url
+final class Url
 {
     /**
      * @see https://docs.arangodb.com/3.4/HTTP/Transaction/

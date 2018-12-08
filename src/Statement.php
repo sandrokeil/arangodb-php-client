@@ -20,7 +20,7 @@ use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;
 use Velocypack\Vpack;
 
-class Statement implements Iterator, Countable
+final class Statement implements Iterator, Countable
 {
     /**
      * "objectType" option entry.

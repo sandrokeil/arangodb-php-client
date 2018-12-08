@@ -63,6 +63,16 @@ class TransactionalClientTest extends TestCase
     /**
      * @test
      */
+    public function it_handles_empty_types(): void
+    {
+        $response = $this->transaction->send();
+
+        $this->assertEquals(StatusCodeInterface::STATUS_OK, $response->getStatusCode());
+    }
+
+    /**
+     * @test
+     */
     public function it_inserts_documents_at_once(): void
     {
         $documents = Document::create(

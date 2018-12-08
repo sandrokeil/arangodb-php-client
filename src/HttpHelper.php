@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace ArangoDb;
 
-class HttpHelper
+final class HttpHelper
 {
     /**
      * Separator between header and body

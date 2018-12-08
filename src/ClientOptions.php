@@ -14,7 +14,7 @@ use ArangoDb\Exception\LogicException;
 /**
  * Immutable client options array container
  */
-class ClientOptions implements \ArrayAccess
+final class ClientOptions implements \ArrayAccess
 {
     // connection options
     public const OPTION_ENDPOINT = 'endpoint';

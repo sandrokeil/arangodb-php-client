@@ -18,7 +18,7 @@ use ArangoDb\Url;
 use Fig\Http\Message\RequestMethodInterface;
 use Psr\Http\Message\RequestInterface;
 
-class Transaction implements TransactionType
+final class Transaction implements TransactionType
 {
     /**
      * @var bool
