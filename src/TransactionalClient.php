@@ -58,8 +58,8 @@ final class TransactionalClient implements ClientInterface
     }
 
     /**
-     * Sends types and transactional types. Type responses are validated via guards. Transactional types must be
-     * manually validated via returned response. You can also use guards for this.
+     * Sends types and transactional types. Type responses and transaction response are validated via guards if provided
+     * to a type. You can also manually validate the transaction response but not the non transaction response.
      *
      * @param array $params
      * @param bool $waitForSync
@@ -72,6 +72,7 @@ final class TransactionalClient implements ClientInterface
         $collectionsWrite = [[]];
         $collectionsRead = [[]];
         $return = [];
+        $guards = [];
 
         if (! empty($this->types)) {
             $batch = Batch::fromTypes(...$this->types);
@@ -90,6 +91,7 @@ final class TransactionalClient implements ClientInterface
                 && ($guard = $type->guard())
                 && $contentId = $guard->contentId()
             ) {
+                $guards[] = $guard;
                 $key = $guard->contentId();
             }
             $actions .= str_replace('var rId', 'var rId' . $key, $type->toJs());
@@ -111,6 +113,12 @@ final class TransactionalClient implements ClientInterface
                 $waitForSync
             )->toRequest()
         );
+
+        if (! empty($guards)) {
+            \array_walk($guards, function ($guard) use ($response) {
+                $guard($response);
+            });
+        }
 
         $this->types = [];
         $this->transactionalTypes = [];

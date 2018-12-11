@@ -283,7 +283,7 @@ class TransactionalClientTest extends TestCase
     /**
      * @test
      */
-    public function it_handles_not_transactional_types_with_guards(): void
+    public function it_handles_types_with_guards(): void
     {
         $guard = new class () implements Guard {
             public $counter = 0;
@@ -300,6 +300,23 @@ class TransactionalClientTest extends TestCase
             public function contentId(): ?string
             {
                 return 'test';
+            }
+        };
+        $transactionalGuard = new class () implements Guard {
+            public $counter = 0;
+            public $validated = false;
+
+            public function __invoke(ResponseInterface $response)
+            {
+                $response->getBody()->rewind();
+                $data = json_decode($response->getBody()->getContents());
+                $this->validated = $data->result->rIdtransaction->new->test2 === 'valid2';
+                $this->counter++;
+            }
+
+            public function contentId(): ?string
+            {
+                return 'transaction';
             }
         };
 
@@ -320,7 +337,7 @@ class TransactionalClientTest extends TestCase
                 self::COLLECTION_NAME_2,
                 ['test2' => 'valid2'],
                 Document::FLAG_RETURN_NEW
-            )
+            )->useGuard($transactionalGuard)
         );
         $this->transaction->add(
             Document::create(
@@ -343,6 +360,9 @@ class TransactionalClientTest extends TestCase
 
         $this->assertSame(1, $guard->counter);
         $this->assertSame('xyz', $guard->name);
+
+        $this->assertSame(1, $transactionalGuard->counter);
+        $this->assertTrue($transactionalGuard->validated);
     }
 
 }
