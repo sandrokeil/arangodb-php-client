@@ -33,7 +33,7 @@ class IndexTest extends TestCase
 
         $content = TestUtil::getResponseContent($response);
 
-        $this->assertStringStartsWith('{"code":200,', $content);
+        $this->assertNotFalse(strpos($content, '"code":200'));
 
         $createCollection = Index::create(
             self::COLLECTION_NAME,

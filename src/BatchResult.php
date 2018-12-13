@@ -83,13 +83,13 @@ final class BatchResult implements Countable, Iterator
                 }
                 continue;
             }
-            if ($response = $this->responses[$guard->contentId()] ?? null) {
+            if (null !== ($response = $this->responses[$guard->contentId()] ?? null)) {
                 $guard($response);
             }
         }
     }
 
-    public function response($contentId): ?ResponseInterface
+    public function response(string $contentId): ?ResponseInterface
     {
         return $this->responses[$contentId] ?? null;
     }

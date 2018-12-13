@@ -48,7 +48,7 @@ class BatchResultTest extends TestCase
         $guard = new class () implements Guard {
             public $counter = 0;
 
-            public function __invoke(ResponseInterface $response)
+            public function __invoke(ResponseInterface $response): void
             {
                 $this->counter++;
             }
@@ -87,7 +87,7 @@ class BatchResultTest extends TestCase
             public $counter = 0;
             public $name;
 
-            public function __invoke(ResponseInterface $response)
+            public function __invoke(ResponseInterface $response): void
             {
                 $response->getBody()->rewind();
                 $data = json_decode($response->getBody()->getContents());

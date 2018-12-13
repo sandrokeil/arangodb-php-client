@@ -161,8 +161,6 @@ final class Statement implements Iterator, Countable
         }
 
         $this->client = $client;
-        $this->extra = [];
-        $this->cached = false;
         $this->options = $options;
         $this->request = $request;
         $this->data = Vpack::fromArray([]);

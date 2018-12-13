@@ -16,7 +16,7 @@ trait ContentIdTrait
     /**
      * Content id
      *
-     * @var string
+     * @var string|null
      */
     private $contentId;
 

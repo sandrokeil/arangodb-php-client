@@ -15,7 +15,7 @@ use Psr\Http\Message\ResponseInterface;
 
 interface Guard
 {
-    public function __invoke(ResponseInterface $response);
+    public function __invoke(ResponseInterface $response): void;
 
     /**
      * Content id is used for batch requests. Null means use guard for all responses.

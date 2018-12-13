@@ -289,7 +289,7 @@ class TransactionalClientTest extends TestCase
             public $counter = 0;
             public $name;
 
-            public function __invoke(ResponseInterface $response)
+            public function __invoke(ResponseInterface $response): void
             {
                 $response->getBody()->rewind();
                 $data = json_decode($response->getBody()->getContents());
@@ -306,7 +306,7 @@ class TransactionalClientTest extends TestCase
             public $counter = 0;
             public $validated = false;
 
-            public function __invoke(ResponseInterface $response)
+            public function __invoke(ResponseInterface $response): void
             {
                 $response->getBody()->rewind();
                 $data = json_decode($response->getBody()->getContents());

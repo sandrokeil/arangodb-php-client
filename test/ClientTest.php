@@ -12,7 +12,6 @@ declare(strict_types=1);
 namespace ArangoDbTest;
 
 use ArangoDb\Type\Collection;
-use ArangoDb\Type\Index;
 use ArangoDb\Type\Document;
 use ArangoDb\Http\VpackStream;
 use ArangoDb\Url;
@@ -64,7 +63,7 @@ class ClientTest extends TestCase
             $content = $body->getContents();
         }
 
-        $this->assertStringStartsWith('{"code":200,', $content);
+        $this->assertNotFalse(strpos($content, '"code":200'));
     }
 
 
