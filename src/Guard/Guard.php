@@ -9,14 +9,18 @@
 
 declare(strict_types=1);
 
-namespace ArangoDb\Exception;
+namespace ArangoDb\Guard;
 
-use LogicException as PhpLogicException;
+use Psr\Http\Message\ResponseInterface;
 
-class LogicException extends PhpLogicException implements ArangoDbException
+interface Guard
 {
-    public static function notPossible(): self
-    {
-        return new self('Not possible at the moment, see ArangoDB docs.');
-    }
+    public function __invoke(ResponseInterface $response): void;
+
+    /**
+     * Content id is used for batch requests. Null means use guard for all responses.
+     *
+     * @return string|null
+     */
+    public function contentId(): ?string;
 }

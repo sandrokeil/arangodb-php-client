@@ -9,14 +9,13 @@
 
 declare(strict_types=1);
 
-namespace ArangoDb\Exception;
+namespace ArangoDb\Type;
 
-use LogicException as PhpLogicException;
+use ArangoDb\Guard\Guard;
 
-class LogicException extends PhpLogicException implements ArangoDbException
+interface GuardSupport extends Type
 {
-    public static function notPossible(): self
-    {
-        return new self('Not possible at the moment, see ArangoDB docs.');
-    }
+    public function useGuard(Guard $guard): Type;
+
+    public function guard(): ?Guard;
 }

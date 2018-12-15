@@ -12,14 +12,14 @@ namespace ArangoDb\Exception;
 use Psr\Http\Client\NetworkExceptionInterface;
 use Psr\Http\Message\RequestInterface;
 
-class ConnectionException extends RuntimeException implements NetworkExceptionInterface
+final class ConnectionException extends RuntimeException implements NetworkExceptionInterface
 {
     /**
      * @var RequestInterface
      */
     private $request;
 
-    public static function forRequest(RequestInterface $request, string $message, int $code)
+    public static function forRequest(RequestInterface $request, string $message, int $code): self
     {
         $self = new self($message, $code);
         $self->request = $request;

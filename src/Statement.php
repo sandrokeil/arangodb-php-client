@@ -11,16 +11,16 @@ namespace ArangoDb;
 
 use ArangoDb\Exception\ServerException;
 use ArangoDb\Http\VpackStream;
-use ArangoDb\Type\CreateCursor;
 use Countable;
 use Fig\Http\Message\RequestMethodInterface;
 use Fig\Http\Message\StatusCodeInterface;
 use ArangoDb\Http\Request;
 use Iterator;
 use Psr\Http\Client\ClientInterface;
+use Psr\Http\Message\RequestInterface;
 use Velocypack\Vpack;
 
-class Statement implements Iterator, Countable
+final class Statement implements Iterator, Countable
 {
     /**
      * "objectType" option entry.
@@ -112,7 +112,7 @@ class Statement implements Iterator, Countable
     /**
      * Full count of the result set (ignoring the outermost LIMIT)
      *
-     * @var int
+     * @var int|null
      */
     private $fullCount;
 
@@ -121,22 +121,26 @@ class Statement implements Iterator, Countable
      *
      * @var array
      */
-    private $extra;
+    private $extra = [];
 
     /**
      * Number of HTTP calls that were made to build the cursor result
+     *
+     * @var int
      */
     private $fetches = 0;
 
     /**
      * Whether or not the query result was served from the AQL query result cache
+     *
+     * @var bool
      */
-    private $cached;
+    private $cached = false;
 
     /**
-     * @var CreateCursor
+     * @var RequestInterface
      */
-    private $cursor;
+    private $request;
 
     /**
      * @var bool
@@ -147,20 +151,18 @@ class Statement implements Iterator, Countable
      * Query is executed on first access
      *
      * @param ClientInterface $client - connection to be used
-     * @param CreateCursor $cursor
+     * @param RequestInterface $request Cursor request
      * @param array $options
      */
-    public function __construct(ClientInterface $client, CreateCursor $cursor, array $options = [])
+    public function __construct(ClientInterface $client, RequestInterface $request, array $options = [])
     {
         if (! isset($options[self::ENTRY_TYPE])) {
             $options[self::ENTRY_TYPE] = self::ENTRY_TYPE_JSON;
         }
 
         $this->client = $client;
-        $this->extra = [];
-        $this->cached = false;
         $this->options = $options;
-        $this->cursor = $cursor;
+        $this->request = $request;
         $this->data = Vpack::fromArray([]);
     }
 
@@ -173,7 +175,7 @@ class Statement implements Iterator, Countable
     private function fetchOutstanding(): void
     {
         $request = $this->fetches === 0
-            ? $this->cursor->toRequest()
+            ? $this->request
             : new Request(RequestMethodInterface::METHOD_PUT, Url::CURSOR . '/' . $this->id);
 
         $response = $this->client->sendRequest($request);
@@ -183,10 +185,10 @@ class Statement implements Iterator, Countable
         if ($httpStatusCode < StatusCodeInterface::STATUS_OK
             || $httpStatusCode > StatusCodeInterface::STATUS_MULTIPLE_CHOICES
         ) {
-            throw ServerException::for($request, $response);
+            throw ServerException::with($request, $response);
         }
 
-        ++$this->fetches;
+        $this->fetches++;
 
         $data = $response->getBody();
         $tmp = $data->getContents();
@@ -217,20 +219,20 @@ class Statement implements Iterator, Countable
         // TODO remove Vpack::fromArray if append is ready
         $this->data = Vpack::fromArray(array_merge($this->data->toArray(), $data[self::ENTRY_RESULT]->toArray()));
 
-        if (! $this->hasMore) {
+        if (false === $this->hasMore) {
             unset($this->id);
         }
     }
 
     /**
-     * Get all results as an array
+     * Return the current result row depending on entry type
      *
      * This might issue additional HTTP requests to fetch any outstanding results from the server
      *
      * @return string|array|object Data
      * @throws \Psr\Http\Client\ClientExceptionInterface
      */
-    public function getAll()
+    public function fetchAll()
     {
         while ($this->hasMore) {
             $this->fetchOutstanding();
@@ -251,31 +253,11 @@ class Statement implements Iterator, Countable
     }
 
     /**
-     * Get the full count of the cursor if available
+     * Get the total number of results in the cursor.
      *
-     * @return int - total number of results
-     */
-    public function getFullCount(): ?int
-    {
-        return $this->fullCount;
-    }
-
-    /**
-     * Get the cached attribute for the result set
+     * This might issue additional HTTP requests to fetch any outstanding results from the server.
      *
-     * @return bool - whether or not the query result was served from the AQL query cache
-     */
-    public function getCached(): bool
-    {
-        return $this->cached;
-    }
-
-    /**
-     * Get the total number of results in the cursor
-     *
-     * This might issue additional HTTP requests to fetch any outstanding results from the server
-     *
-     * @return int - total number of results
+     * @return int Total number of results
      * @throws \Psr\Http\Client\ClientExceptionInterface
      */
     public function count()
@@ -323,17 +305,21 @@ class Statement implements Iterator, Countable
         }
     }
 
-    public function key()
+    public function key(): int
     {
         return $this->position;
     }
 
-    public function next()
+    public function next(): void
     {
-        ++$this->position;
+        $this->position++;
     }
 
-    public function valid()
+    /**
+     * @return bool
+     * @throws \Psr\Http\Client\ClientExceptionInterface
+     */
+    public function valid(): bool
     {
         if ($this->position <= $this->length - 1) {
             // we have more results than the current position is
@@ -351,103 +337,125 @@ class Statement implements Iterator, Countable
     }
 
     /**
-     * Get a statistical figure value from the query result
+     * Returns the extra data of the query (statistics etc.). Contents of the result array depend on the type of query
+     * executed
      *
-     * @param string $name - name of figure to return
+     * @return array
+     */
+    public function extra(): array
+    {
+        return $this->extra ?? [];
+    }
+
+    /**
+     * Returns the warnings issued during query execution
+     *
+     * @return array
+     */
+    public function warnings(): array
+    {
+        return $this->extra['warnings'] ?? [];
+    }
+
+    /**
+     * Returns the number of writes executed by the query
+     *
+     * @return int
+     */
+    public function writesExecuted(): int
+    {
+        return $this->getStatValue('writesExecuted');
+    }
+
+    /**
+     * Returns the number of ignored write operations from the query
+     *
+     * @return int
+     */
+    public function writesIgnored(): int
+    {
+        return $this->getStatValue('writesIgnored');
+    }
+
+    /**
+     * Returns the number of documents iterated over in full scans
+     *
+     * @return int
+     */
+    public function scannedFull(): int
+    {
+        return $this->getStatValue('scannedFull');
+    }
+
+    /**
+     * Returns the number of documents iterated over in index scans
+     *
+     * @return int
+     */
+    public function scannedIndex(): int
+    {
+        return $this->getStatValue('scannedIndex');
+    }
+
+    /**
+     * Returns the number of documents filtered by the query
+     *
+     * @return int
+     */
+    public function filtered(): int
+    {
+        return $this->getStatValue('filtered');
+    }
+
+    /**
+     * Returns the number of HTTP calls that were made to build the cursor result
+     *
+     * @return int
+     */
+    public function fetches(): int
+    {
+        return $this->fetches;
+    }
+
+    /**
+     * Returns cursor id only after first rewind / fetch
+     *
+     * @return string
+     */
+    public function getId(): ?string
+    {
+        return $this->id;
+    }
+
+    /**
+     * Get the full count of the cursor if available. Does not load all data.
+     *
+     * @return int Total number of results
+     */
+    public function fullCount(): ?int
+    {
+        return $this->fullCount;
+    }
+
+    /**
+     * Get the cached attribute for the result set
+     *
+     * @return bool Whether or not the query result was served from the AQL query cache
+     */
+    public function isCached(): bool
+    {
+        return $this->cached;
+    }
+
+    /**
+     * Returns statistical figure value from the query result, default is 0
+     *
+     * @param string $name Name of figure
      *
      * @return int
      */
     private function getStatValue(string $name): int
     {
         return $this->extra[self::ENTRY_STATS][$name] ?? 0;
-    }
-
-    /**
-     * Return the extra data of the query (statistics etc.). Contents of the result array
-     * depend on the type of query executed
-     *
-     * @return array
-     */
-    public function getExtra(): array
-    {
-        return $this->extra ?? [];
-    }
-
-    /**
-     * Return the warnings issued during query execution
-     *
-     * @return array
-     */
-    public function getWarnings(): array
-    {
-        return $this->extra['warnings'] ?? [];
-    }
-
-    /**
-     * Return the number of writes executed by the query
-     *
-     * @return int
-     */
-    public function getWritesExecuted(): int
-    {
-        return $this->getStatValue('writesExecuted');
-    }
-
-    /**
-     * Return the number of ignored write operations from the query
-     *
-     * @return int
-     */
-    public function getWritesIgnored(): int
-    {
-        return $this->getStatValue('writesIgnored');
-    }
-
-    /**
-     * Return the number of documents iterated over in full scans
-     *
-     * @return int
-     */
-    public function getScannedFull(): int
-    {
-        return $this->getStatValue('scannedFull');
-    }
-
-    /**
-     * Return the number of documents iterated over in index scans
-     *
-     * @return int
-     */
-    public function getScannedIndex(): int
-    {
-        return $this->getStatValue('scannedIndex');
-    }
-
-    /**
-     * Return the number of documents filtered by the query
-     *
-     * @return int
-     */
-    public function getFiltered(): int
-    {
-        return $this->getStatValue('filtered');
-    }
-
-    /**
-     * Return the number of HTTP calls that were made to build the cursor result
-     *
-     * @return int
-     */
-    public function getFetches(): int
-    {
-        return $this->fetches;
-    }
-
-    /**
-     * @return string
-     */
-    public function getId(): ?string
-    {
-        return $this->id;
     }
 }

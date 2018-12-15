@@ -21,7 +21,7 @@ final class NetworkException extends RuntimeException implements ClientException
      */
     private $request;
 
-    public static function for(RequestInterface $request, Throwable $previousException = null): self
+    public static function with(RequestInterface $request, Throwable $previousException = null): self
     {
         $self = new self(
             'Response could no be evaluated.',

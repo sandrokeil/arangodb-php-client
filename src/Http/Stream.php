@@ -13,7 +13,6 @@ namespace ArangoDb\Http;
 
 use ArangoDb\Exception;
 use Psr\Http\Message\StreamInterface;
-use RuntimeException;
 
 use function array_key_exists;
 use function fclose;
@@ -52,12 +51,12 @@ final class Stream implements StreamInterface
     /**
      * @var resource|null
      */
-    protected $resource;
+    private $handle;
 
     /**
      * @var string|resource
      */
-    protected $stream;
+    private $stream;
 
     /**
      * @param string|resource $stream
@@ -84,7 +83,7 @@ final class Stream implements StreamInterface
             }
 
             return $this->getContents();
-        } catch (RuntimeException $e) {
+        } catch (Exception\RuntimeException $e) {
             return '';
         }
     }
@@ -94,12 +93,12 @@ final class Stream implements StreamInterface
      */
     public function close() : void
     {
-        if (! $this->resource) {
+        if (! $this->handle) {
             return;
         }
 
-        $resource = $this->detach();
-        fclose($resource);
+        $handle = $this->detach();
+        fclose($handle);
     }
 
     /**
@@ -107,23 +106,23 @@ final class Stream implements StreamInterface
      */
     public function detach()
     {
-        $resource = $this->resource;
-        $this->resource = null;
-        return $resource;
+        $handle = $this->handle;
+        $this->handle = null;
+        return $handle;
     }
 
     /**
      * Attach a new stream/resource to the instance.
      *
-     * @param string|resource $resource
+     * @param string|resource $handle
      * @param string $mode
      * @throws Exception\InvalidArgumentException for stream identifier that cannot be
      *     cast to a resource
      * @throws Exception\InvalidArgumentException for non-resource stream
      */
-    public function attach($resource, string $mode = 'r') : void
+    public function attach($handle, string $mode = 'r') : void
     {
-        $this->setStream($resource, $mode);
+        $this->setStream($handle, $mode);
     }
 
     /**
@@ -131,11 +130,11 @@ final class Stream implements StreamInterface
      */
     public function getSize() : ?int
     {
-        if (null === $this->resource) {
+        if (null === $this->handle) {
             return null;
         }
 
-        $stats = fstat($this->resource);
+        $stats = fstat($this->handle);
         if ($stats !== false) {
             return $stats['size'];
         }
@@ -148,11 +147,11 @@ final class Stream implements StreamInterface
      */
     public function tell() : int
     {
-        if (! $this->resource) {
+        if (! $this->handle) {
             throw Exception\UntellableStreamException::dueToMissingResource();
         }
 
-        $result = ftell($this->resource);
+        $result = ftell($this->handle);
         if (! is_int($result)) {
             throw Exception\UntellableStreamException::dueToPhpError();
         }
@@ -165,11 +164,11 @@ final class Stream implements StreamInterface
      */
     public function eof() : bool
     {
-        if (! $this->resource) {
+        if (! $this->handle) {
             return true;
         }
 
-        return feof($this->resource);
+        return feof($this->handle);
     }
 
     /**
@@ -177,11 +176,11 @@ final class Stream implements StreamInterface
      */
     public function isSeekable() : bool
     {
-        if (! $this->resource) {
+        if (! $this->handle) {
             return false;
         }
 
-        $meta = stream_get_meta_data($this->resource);
+        $meta = stream_get_meta_data($this->handle);
         return $meta['seekable'];
     }
 
@@ -190,7 +189,7 @@ final class Stream implements StreamInterface
      */
     public function seek($offset, $whence = SEEK_SET) : void
     {
-        if (! $this->resource) {
+        if (! $this->handle) {
             throw Exception\UnseekableStreamException::dueToMissingResource();
         }
 
@@ -198,7 +197,7 @@ final class Stream implements StreamInterface
             throw Exception\UnseekableStreamException::dueToConfiguration();
         }
 
-        $result = fseek($this->resource, $offset, $whence);
+        $result = fseek($this->handle, $offset, $whence);
 
         if (0 !== $result) {
             throw Exception\UnseekableStreamException::dueToPhpError();
@@ -218,11 +217,11 @@ final class Stream implements StreamInterface
      */
     public function isWritable() : bool
     {
-        if (! $this->resource) {
+        if (! $this->handle) {
             return false;
         }
 
-        $meta = stream_get_meta_data($this->resource);
+        $meta = stream_get_meta_data($this->handle);
         $mode = $meta['mode'];
 
         return (
@@ -237,9 +236,9 @@ final class Stream implements StreamInterface
     /**
      * {@inheritdoc}
      */
-    public function write($string) : int
+    public function write($data) : int
     {
-        if (! $this->resource) {
+        if (! $this->handle) {
             throw Exception\UnwritableStreamException::dueToMissingResource();
         }
 
@@ -247,7 +246,7 @@ final class Stream implements StreamInterface
             throw Exception\UnwritableStreamException::dueToConfiguration();
         }
 
-        $result = fwrite($this->resource, $string);
+        $result = fwrite($this->handle, $data);
 
         if (false === $result) {
             throw Exception\UnwritableStreamException::dueToPhpError();
@@ -261,11 +260,11 @@ final class Stream implements StreamInterface
      */
     public function isReadable() : bool
     {
-        if (! $this->resource) {
+        if (! $this->handle) {
             return false;
         }
 
-        $meta = stream_get_meta_data($this->resource);
+        $meta = stream_get_meta_data($this->handle);
         $mode = $meta['mode'];
 
         return (strstr($mode, 'r') || strstr($mode, '+'));
@@ -276,7 +275,7 @@ final class Stream implements StreamInterface
      */
     public function read($length) : string
     {
-        if (! $this->resource) {
+        if (! $this->handle) {
             throw Exception\UnreadableStreamException::dueToMissingResource();
         }
 
@@ -284,7 +283,7 @@ final class Stream implements StreamInterface
             throw Exception\UnreadableStreamException::dueToConfiguration();
         }
 
-        $result = fread($this->resource, $length);
+        $result = fread($this->handle, $length);
 
         if (false === $result) {
             throw Exception\UnreadableStreamException::dueToPhpError();
@@ -302,7 +301,7 @@ final class Stream implements StreamInterface
             throw Exception\UnreadableStreamException::dueToConfiguration();
         }
 
-        $result = stream_get_contents($this->resource);
+        $result = stream_get_contents($this->handle);
         if (false === $result) {
             throw Exception\UnreadableStreamException::dueToPhpError();
         }
@@ -315,10 +314,10 @@ final class Stream implements StreamInterface
     public function getMetadata($key = null)
     {
         if (null === $key) {
-            return stream_get_meta_data($this->resource);
+            return stream_get_meta_data($this->handle);
         }
 
-        $metadata = stream_get_meta_data($this->resource);
+        $metadata = stream_get_meta_data($this->handle);
         if (! array_key_exists($key, $metadata)) {
             return null;
         }
@@ -336,7 +335,7 @@ final class Stream implements StreamInterface
     private function setStream($stream, string $mode = 'r') : void
     {
         $error    = null;
-        $resource = $stream;
+        $handle = $stream;
 
         if (is_string($stream)) {
             set_error_handler(function ($e) use (&$error) {
@@ -346,7 +345,7 @@ final class Stream implements StreamInterface
 
                 $error = $e;
             });
-            $resource = fopen($stream, $mode);
+            $handle = fopen($stream, $mode);
             restore_error_handler();
         }
 
@@ -354,16 +353,16 @@ final class Stream implements StreamInterface
             throw new Exception\InvalidArgumentException('Invalid stream reference provided');
         }
 
-        if (! is_resource($resource) || 'stream' !== get_resource_type($resource)) {
+        if (! is_resource($handle) || 'stream' !== get_resource_type($handle)) {
             throw new Exception\InvalidArgumentException(
                 'Invalid stream provided; must be a string stream identifier or stream resource'
             );
         }
 
-        if ($stream !== $resource) {
+        if ($stream !== $handle) {
             $this->stream = $stream;
         }
 
-        $this->resource = $resource;
+        $this->handle = $handle;
     }
 }

@@ -7,38 +7,27 @@
  * @license   http://github.com/sandrokeil/arangodb-php-client/blob/master/LICENSE.md New BSD License
  */
 
+declare(strict_types=1);
+
 namespace ArangoDb\Exception;
 
-use Psr\Http\Client\ClientExceptionInterface;
-use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
-final class ServerException extends RuntimeException implements ClientExceptionInterface
+class GuardErrorException extends RuntimeException
 {
     /**
      * @var ResponseInterface
      */
     private $response;
 
-    /**
-     * @var RequestInterface
-     */
-    private $request;
-
-    public static function with(RequestInterface $request, ResponseInterface $response): self
+    public static function with(ResponseInterface $response): self
     {
         $self = new self(
-            sprintf('Response with status code "%s" was returned.', $response->getStatusCode()),
+            'A guard has an error detected.',
             $response->getStatusCode()
         );
-        $self->request = $request;
         $self->response = $response;
         return $self;
-    }
-
-    public function getRequest(): RequestInterface
-    {
-        return $this->request;
     }
 
     public function getResponse(): ResponseInterface

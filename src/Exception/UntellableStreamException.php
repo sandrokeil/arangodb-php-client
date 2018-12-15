@@ -11,8 +11,6 @@ declare(strict_types=1);
 
 namespace ArangoDb\Exception;
 
-use RuntimeException;
-
 /**
  * Code is largely lifted from the Zend\Diactoros\Stream implementation in
  * Zend Diactoros, released with the copyright and license below.
@@ -21,7 +19,7 @@ use RuntimeException;
  * @copyright Copyright (c) 2015-2018 Zend Technologies USA Inc. (http://www.zend.com)
  * @license   https://github.com/zendframework/zend-diactoros/blob/master/LICENSE.md New BSD License
  */
-class UntellableStreamException extends RuntimeException implements ArangoDbException
+class UntellableStreamException extends RuntimeException
 {
     public static function dueToMissingResource() : self
     {

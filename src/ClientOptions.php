@@ -14,7 +14,7 @@ use ArangoDb\Exception\LogicException;
 /**
  * Immutable client options array container
  */
-class ClientOptions implements \ArrayAccess
+final class ClientOptions implements \ArrayAccess
 {
     // connection options
     public const OPTION_ENDPOINT = 'endpoint';
@@ -125,21 +125,36 @@ class ClientOptions implements \ArrayAccess
         }
     }
 
-    public function offsetSet($offset, $value)
+    /**
+     * @param mixed $offset
+     * @param mixed $value
+     */
+    public function offsetSet($offset, $value): void
     {
         throw new LogicException('Immutable object. Value for "' . $offset . '" not set.');
     }
 
-    public function offsetExists($offset)
+    /**
+     * @param mixed $offset
+     * @return bool
+     */
+    public function offsetExists($offset): bool
     {
         return isset($this->options[$offset]);
     }
 
-    public function offsetUnset($offset)
+    /**
+     * @param mixed $offset
+     */
+    public function offsetUnset($offset): void
     {
         throw new LogicException('Immutable object. Value for "' . $offset . '" not unset.');
     }
 
+    /**
+     * @param mixed $offset
+     * @return mixed
+     */
     public function offsetGet($offset)
     {
         if (! array_key_exists($offset, $this->options)) {
