@@ -86,7 +86,7 @@ final class TransactionalClient implements ClientInterface
 
         foreach ($this->transactionalTypes as $key => $type) {
             $collectionsWrite[] = $type->collectionsWrite();
-            $collectionsWrite[] = $type->collectionsRead();
+            $collectionsRead[] = $type->collectionsRead();
             if ($type instanceof GuardSupport
                 && ($guard = $type->guard())
                 && $contentId = $guard->contentId()

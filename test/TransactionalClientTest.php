@@ -90,7 +90,7 @@ class TransactionalClientTest extends TestCase
 
         $content = TestUtil::getResponseContent($response);
 
-        $this->assertEquals(StatusCodeInterface::STATUS_OK, $response->getStatusCode());
+        $this->assertEquals(StatusCodeInterface::STATUS_OK, $response->getStatusCode(), $content);
 
         $data = json_decode($content, true);
         $this->arrayHasKey('result', $data);
