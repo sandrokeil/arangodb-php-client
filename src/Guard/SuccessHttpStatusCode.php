@@ -19,7 +19,7 @@ final class SuccessHttpStatusCode implements Guard
 {
     use ContentIdTrait;
 
-    public function __invoke(ResponseInterface $response)
+    public function __invoke(ResponseInterface $response): void
     {
         $httpStatusCode = $response->getStatusCode();
 
