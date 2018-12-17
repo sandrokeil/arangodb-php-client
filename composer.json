@@ -26,9 +26,9 @@
     },
     "autoload": {
         "psr-4": {
-            "ArangoDb\\": "src/"
-        },
-        "classmap": ["src/Polyfill"]
+            "ArangoDb\\": "src/",
+            "Velocypack\\": "src/Polyfill/"
+        }
     },
     "autoload-dev": {
         "psr-4": {

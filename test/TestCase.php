@@ -33,6 +33,10 @@ class TestCase extends \PHPUnit\Framework\TestCase
 
     protected function setUp()
     {
+        if (getenv('USE_VPACK') === 'true' && !extension_loaded('velocypack')) {
+            $this->markTestSkipped('Vpack extension not loaded.');
+        }
+
         $this->client = TestUtil::getClient();
     }
 }
