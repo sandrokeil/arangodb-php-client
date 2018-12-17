@@ -10,7 +10,7 @@ via [martin-schilling/php-velocypack](https://github.com/martin-schilling/php-ve
 ## Requirements
 
 - PHP >= 7.1
-- ArangoDB server version >= 3.3
+- ArangoDB server version >= 3.4 (3.3 has some issues with Velocypack)
 
 ## Setup
 
@@ -40,6 +40,6 @@ $ docker-compose run --rm php vendor/bin/phpunit
 Execute Velocypack tests with
 
 ```
-$ docker-compose run --rm vpack vendor/bin/phpunit
+$ docker-compose run --rm vpack72 vendor/bin/phpunit
 ```
 
