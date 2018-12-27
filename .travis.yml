@@ -80,6 +80,7 @@ script:
   - if [[ $USE_VPACK == 'true' ]]; then php -dextension=velocypack.so ./vendor/bin/phpunit; fi
   - if [[ $USE_VPACK == 'false' ]]; then php ./vendor/bin/phpunit; fi
 
-after_success:
+after_script:
   - if [[ $TEST_COVERAGE == 'true' ]]; then travis_retry php vendor/bin/php-coveralls -v ; fi
-  - if [[ $TEST_COVERAGE == 'true' ]]; then wget https://scrutinizer-ci.com/ocular.phar && php ocular.phar code-coverage:upload --format=php-clover build/logs/clover.xml ; fi
+  - if [[ $TEST_COVERAGE == 'true' ]]; then wget https://scrutinizer-ci.com/ocular.phar ; fi
+  - if [[ $TEST_COVERAGE == 'true' ]]; then php ocular.phar code-coverage:upload --format=php-clover build/logs/clover.xml ; fi

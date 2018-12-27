@@ -1,7 +1,12 @@
 # arangodb-php-client
 
 [![Build Status](https://travis-ci.org/sandrokeil/arangodb-php-client.svg?branch=master)](https://travis-ci.org/sandrokeil/arangodb-php-client)
-[![Coverage Status](https://coveralls.io/repos/sandrokeil/arangodb-php-client/badge.svg?branch=master&service=github)](https://coveralls.io/github/sandrokeil/arangodb-php-client?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/sandrokeil/arangodb-php-client/badge.svg?branch=master)](https://coveralls.io/github/sandrokeil/arangodb-php-client?branch=master)
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/sandrokeil/arangodb-php-client/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/sandrokeil/arangodb-php-client/?branch=master)
+[![Latest Stable Version](https://poser.pugx.org/sandrokeil/arangodb-php-client/v/stable.png)](https://packagist.org/packages/sandrokeil/arangodb-php-client)
+[![Total Downloads](https://poser.pugx.org/sandrokeil/arangodb-php-client/downloads.png)](https://packagist.org/packages/sandrokeil/arangodb-php-client)
+[![License](https://poser.pugx.org/sandrokeil/arangodb-php-client/license.png)](https://packagist.org/packages/sandrokeil/arangodb-php-client)
+
 
 [ArangoDB](https://arangodb.com/ "native multi-model database") PHP PSR 7/18 client implementation with
 [Velcoypack](https://github.com/arangodb/velocypack "a fast and compact format for serialization and storage") support
