@@ -11,12 +11,12 @@ declare(strict_types=1);
 
 namespace ArangoDb\Type;
 
-use ArangoDb\Exception\GuardContentIdCollisionException;
 use ArangoDb\Guard\Guard;
-use ArangoDb\Http\Request;
 use ArangoDb\Url;
 use Fig\Http\Message\RequestMethodInterface;
+use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\StreamFactoryInterface;
 
 final class Batch implements BatchType
 {
@@ -33,14 +33,11 @@ final class Batch implements BatchType
     public function __construct(Type ...$types)
     {
         foreach ($types as $key => $type) {
-            if ($type instanceof GuardSupport && $guard = $type->guard()) {
-                if ($contentId = $guard->contentId()) {
+            if ($type instanceof GuardSupport && null !== ($guard = $type->guard())) {
+                if (null !== $guard->contentId()) {
                     $key = $guard->contentId();
                 }
                 $this->guards[] = $guard;
-            }
-            if (isset($this->types[$key])) {
-                throw GuardContentIdCollisionException::withType($type);
             }
             $this->types[$key] = $type;
         }
@@ -51,8 +48,10 @@ final class Batch implements BatchType
         return new self(...$types);
     }
 
-    public function toRequest(): RequestInterface
-    {
+    public function toRequest(
+        RequestFactoryInterface $requestFactory,
+        StreamFactoryInterface $streamFactory
+    ): RequestInterface {
         $body = '';
 
         $boundary = '--' . self::MIME_BOUNDARY . self::EOL;
@@ -62,18 +61,13 @@ final class Batch implements BatchType
             $body .= $boundary;
             $body .= 'Content-Id: ' . $key . self::BODY_SEPARATOR;
 
-            $body .= $this->typeToString($type) . self::EOL;
+            $body .= $this->typeToString($type, $requestFactory, $streamFactory) . self::EOL;
         }
         $body .= '--' . self::MIME_BOUNDARY . '--' . self::BODY_SEPARATOR;
 
-        $request = new Request(
-            RequestMethodInterface::METHOD_POST,
-            Url::BATCH,
-            [
-                'Content-Type' => 'multipart/form-data',
-                'boundary' => self::MIME_BOUNDARY,
-            ]
-        );
+        $request = $requestFactory->createRequest(RequestMethodInterface::METHOD_POST, Url::BATCH);
+        $request = $request->withHeader('Content-Type', 'multipart/form-data');
+        $request = $request->withHeader('boundary', self::MIME_BOUNDARY);
 
         $request->getBody()->write($body);
         $request->getBody()->rewind();
@@ -90,14 +84,19 @@ final class Batch implements BatchType
      * Builds the batch request body
      *
      * @param Type $type
+     * @param RequestFactoryInterface $requestFactory
+     * @param StreamFactoryInterface $streamFactory
      * @return string
      */
-    private function typeToString(Type $type): string
-    {
-        $request = $type->toRequest();
+    private function typeToString(
+        Type $type,
+        RequestFactoryInterface $requestFactory,
+        StreamFactoryInterface $streamFactory
+    ): string {
+        $request = $type->toRequest($requestFactory, $streamFactory);
         $body = $request->getBody()->getContents();
 
-        if ($body) {
+        if ('' !== $body) {
             $body = self::EOL . self::EOL . $body;
         }
 

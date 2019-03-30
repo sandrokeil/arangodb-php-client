@@ -2,57 +2,8 @@ version: '2'
 services:
   # To run tests docker-compose run --rm php vendor/bin/phpunit
   php:
-    image: prooph/php:7.2-cli-xdebug
+    image: prooph/php:7.3-cli-xdebug
     environment:
-      PHP_IDE_CONFIG: "serverName=application"
-      XDEBUG_CONFIG: "remote_host=phpstorm"
-      arangodb_host: "tcp://arangodb:8529"
-      arangodb_username: ""
-      arangodb_password: ""
-      arangodb_dbname: testing
-    volumes:
-      - "./:/app"
-
-  # To run tests docker-compose run --rm vpack71 vendor/bin/phpunit
-  vpack71:
-    image: vpack71
-    build:
-      context: ./env
-      dockerfile: "7.1"
-    environment:
-      USE_VPACK: "true"
-      PHP_IDE_CONFIG: "serverName=application"
-      XDEBUG_CONFIG: "remote_host=phpstorm"
-      arangodb_host: "tcp://arangodb:8529"
-      arangodb_username: ""
-      arangodb_password: ""
-      arangodb_dbname: testing
-    volumes:
-      - "./:/app"
-  # To run tests docker-compose run --rm vpack72 vendor/bin/phpunit
-  vpack72:
-    image: vpack72
-    build:
-      context: ./env
-      dockerfile: "7.2"
-    environment:
-      USE_VPACK: "true"
-      PHP_IDE_CONFIG: "serverName=application"
-      XDEBUG_CONFIG: "remote_host=phpstorm"
-      arangodb_host: "tcp://arangodb:8529"
-      arangodb_username: ""
-      arangodb_password: ""
-      arangodb_dbname: testing
-    volumes:
-      - "./:/app"
-  # To run tests docker-compose run --rm vpack73 vendor/bin/phpunit
-  vpack73:
-    image: vpack73
-    build:
-      context: ./env
-      dockerfile: "7.3"
-    environment:
-      USE_VPACK: "true"
       PHP_IDE_CONFIG: "serverName=application"
       XDEBUG_CONFIG: "remote_host=phpstorm"
       arangodb_host: "tcp://arangodb:8529"
@@ -63,7 +14,7 @@ services:
       - "./:/app"
 
   arangodb:
-    image: arangodb/arangodb:3.4.0
+    image: arangodb/arangodb:3.4.4
     ports:
       - 8529:8529
     environment:

@@ -12,11 +12,12 @@ declare(strict_types=1);
 namespace ArangoDb\Type;
 
 use ArangoDb\Guard\Guard;
-use ArangoDb\Http\Request;
-use ArangoDb\Http\VpackStream;
 use ArangoDb\Url;
+use ArangoDb\Util\Json;
 use Fig\Http\Message\RequestMethodInterface;
+use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\StreamFactoryInterface;
 
 final class Collection implements CollectionType
 {
@@ -152,27 +153,22 @@ final class Collection implements CollectionType
         return new self($collectionName, '/unload', RequestMethodInterface::METHOD_PUT);
     }
 
-    public function toRequest(): RequestInterface
-    {
+    public function toRequest(
+        RequestFactoryInterface $requestFactory,
+        StreamFactoryInterface $streamFactory
+    ): RequestInterface {
         $uri = $this->uri;
 
         if ($this->name !== '' && $this->method !== RequestMethodInterface::METHOD_POST) {
             $uri = '/' . $this->name . $uri;
         }
 
-        if (empty($this->options)) {
-            return new Request(
-                $this->method,
-                Url::COLLECTION . $uri
-            );
-        }
+        $request = $requestFactory->createRequest($this->method, Url::COLLECTION . $uri);
 
-        return new Request(
-            $this->method,
-            Url::COLLECTION . $uri,
-            [],
-            new VpackStream($this->options)
-        );
+        if (0 === count($this->options)) {
+            return $request;
+        }
+        return $request->withBody($streamFactory->createStream(Json::encode($this->options)));
     }
 
     public function useGuard(Guard $guard): Type

@@ -12,11 +12,12 @@ declare(strict_types=1);
 namespace ArangoDb\Type;
 
 use ArangoDb\Guard\Guard;
-use ArangoDb\Http\VpackStream;
 use ArangoDb\Url;
+use ArangoDb\Util\Json;
 use Fig\Http\Message\RequestMethodInterface;
-use ArangoDb\Http\Request;
+use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\StreamFactoryInterface;
 
 final class Index implements IndexType, GuardSupport
 {
@@ -97,21 +98,17 @@ final class Index implements IndexType, GuardSupport
         );
     }
 
-    public function toRequest(): RequestInterface
-    {
-        if (! empty($this->options)) {
-            return new Request(
-                $this->method,
-                Url::INDEX . $this->uri,
-                [],
-                new VpackStream($this->options)
-            );
+    public function toRequest(
+        RequestFactoryInterface $requestFactory,
+        StreamFactoryInterface $streamFactory
+    ): RequestInterface {
+        $request = $requestFactory->createRequest($this->method, Url::INDEX . $this->uri);
+
+        if (0 === count($this->options)) {
+            return $request;
         }
 
-        return new Request(
-            $this->method,
-            Url::INDEX . $this->uri
-        );
+        return $request->withBody($streamFactory->createStream(Json::encode($this->options)));
     }
 
     public function useGuard(Guard $guard): Type

@@ -15,6 +15,7 @@ use ArangoDb\Guard\Guard;
 use ArangoDb\TransactionalClient;
 use ArangoDb\Type\Collection;
 use ArangoDb\Type\Document;
+use ArangoDb\Type\Index;
 use Fig\Http\Message\StatusCodeInterface;
 use Psr\Http\Message\ResponseInterface;
 
@@ -28,36 +29,44 @@ class TransactionalClientTest extends TestCase
      */
     private $transaction;
 
-    public static function setUpBeforeClass()
+    public static function setUpBeforeClass(): void
     {
         parent::setUpBeforeClass();
 
         TestUtil::getClient()->sendRequest(
-            Collection::create(self::COLLECTION_NAME,
+            Collection::create(
+                self::COLLECTION_NAME,
                 [
                     'keyOptions' => [
                         'allowUserKeys' => true,
                         'type' => 'traditional',
                     ],
                 ]
-            )->toRequest()
+            )->toRequest(TestUtil::getRequestFactory(), TestUtil::getStreamFactory())
         );
         TestUtil::getClient()->sendRequest(
-            Collection::create(self::COLLECTION_NAME_2,
+            Collection::create(
+                self::COLLECTION_NAME_2,
                 [
                     'keyOptions' => [
                         'allowUserKeys' => true,
                         'type' => 'traditional',
                     ],
                 ]
-        )->toRequest());
+            )->toRequest(TestUtil::getRequestFactory(), TestUtil::getStreamFactory())
+        );
     }
 
-    protected function setUp()
+    protected function setUp(): void
     {
         parent::setUp();
 
-        $this->transaction = new TransactionalClient($this->client);
+        $this->transaction = new TransactionalClient(
+            $this->client,
+            $this->requestFactory,
+            $this->responseFactory,
+            $this->streamFactory
+        );
     }
 
     /**
@@ -68,6 +77,28 @@ class TransactionalClientTest extends TestCase
         $response = $this->transaction->send();
 
         $this->assertEquals(StatusCodeInterface::STATUS_OK, $response->getStatusCode());
+    }
+
+    /**
+     * @test
+     */
+    public function it_can_be_reset(): void
+    {
+
+        $this->transaction->add(Document::create(
+            self::COLLECTION_NAME,
+            [
+                ['test3' => 'valid3'],
+            ]
+        ));
+        $this->transaction->add(Index::info('test'));
+        $this->assertSame(1, $this->transaction->countTransactionalTypes());
+        $this->assertSame(1, $this->transaction->countTypes());
+
+        $this->transaction->reset();
+
+        $this->assertSame(0, $this->transaction->countTransactionalTypes());
+        $this->assertSame(0, $this->transaction->countTypes());
     }
 
     /**
@@ -86,6 +117,8 @@ class TransactionalClientTest extends TestCase
         );
 
         $this->transaction->add($documents);
+        $this->assertSame(1, $this->transaction->countTransactionalTypes());
+        $this->assertSame(0, $this->transaction->countTypes());
         $response = $this->transaction->send();
 
         $content = TestUtil::getResponseContent($response);
@@ -93,8 +126,8 @@ class TransactionalClientTest extends TestCase
         $this->assertEquals(StatusCodeInterface::STATUS_OK, $response->getStatusCode(), $content);
 
         $data = json_decode($content, true);
-        $this->arrayHasKey('result', $data);
-        $this->arrayHasKey('rId0', $data['result']);
+        $this->arrayHasKey('result')->evaluate($data);
+        $this->arrayHasKey('rId0')->evaluate($data['result']);
     }
 
     /**
@@ -267,6 +300,23 @@ class TransactionalClientTest extends TestCase
                 Document::FLAG_RETURN_NEW
             )
         );
+        $this->transaction->add(
+            Index::create(
+                self::COLLECTION_NAME_2,
+                [
+                    'type' => 'hash',
+                    'fields' => [
+                        'test2',
+                    ],
+                    'selectivityEstimate' => 1,
+                    'unique' => false,
+                    'sparse' => false,
+                ]
+            )
+        );
+        $this->assertSame(3, $this->transaction->countTransactionalTypes());
+        $this->assertSame(1, $this->transaction->countTypes());
+
         $response = $this->transaction->send();
 
         $content = TestUtil::getResponseContent($response);
@@ -278,6 +328,12 @@ class TransactionalClientTest extends TestCase
         $this->arrayHasKey('rId0', $data['result']);
         $this->arrayHasKey('rId1', $data['result']);
         $this->arrayHasKey('rId2', $data['result']);
+
+        $response = $this->client->sendRequest(
+            Index::listAll(self::COLLECTION_NAME_2)->toRequest($this->requestFactory, $this->streamFactory)
+        );
+        $this->assertEquals(StatusCodeInterface::STATUS_OK, $response->getStatusCode());
+        $this->assertStringContainsString('"fields":["test2"]', $response->getBody()->getContents());
     }
 
     /**
@@ -364,5 +420,4 @@ class TransactionalClientTest extends TestCase
         $this->assertSame(1, $transactionalGuard->counter);
         $this->assertTrue($transactionalGuard->validated);
     }
-
 }

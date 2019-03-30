@@ -11,16 +11,19 @@ declare(strict_types=1);
 
 namespace ArangoDb;
 
-use ArangoDb\Http\Response;
 use ArangoDb\Type\Batch;
 use ArangoDb\Type\GuardSupport;
 use ArangoDb\Type\Transaction as TransactionType;
 use ArangoDb\Type\Transactional;
 use ArangoDb\Type\Type;
 use Fig\Http\Message\StatusCodeInterface;
+use function MongoDB\BSON\toPHP;
 use Psr\Http\Client\ClientInterface;
+use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\StreamFactoryInterface;
 
 final class TransactionalClient implements ClientInterface
 {
@@ -28,6 +31,16 @@ final class TransactionalClient implements ClientInterface
      * @var ClientInterface
      */
     private $client;
+
+    /**
+     * @var RequestFactoryInterface
+     */
+    private $requestFactory;
+
+    /**
+     * @var ResponseFactoryInterface
+     */
+    private $responseFactory;
 
     /**
      * Types
@@ -44,12 +57,20 @@ final class TransactionalClient implements ClientInterface
     private $transactionalTypes = [];
 
     /**
-     * TransactionalClient constructor.
-     * @param ClientInterface $client
+     * @var StreamFactoryInterface
      */
-    public function __construct(ClientInterface $client)
-    {
+    private $streamFactory;
+
+    public function __construct(
+        ClientInterface $client,
+        RequestFactoryInterface $requestFactory,
+        ResponseFactoryInterface $responseFactory,
+        StreamFactoryInterface $streamFactory
+    ) {
         $this->client = $client;
+        $this->requestFactory = $requestFactory;
+        $this->responseFactory = $responseFactory;
+        $this->streamFactory = $streamFactory;
     }
 
     public function sendRequest(RequestInterface $request): ResponseInterface
@@ -68,28 +89,35 @@ final class TransactionalClient implements ClientInterface
      */
     public function send(array $params = [], bool $waitForSync = false): ResponseInterface
     {
+        if (0 !== count($this->types)) {
+            $batch = Batch::fromTypes(...$this->types);
+            $responseBatch = $this->client->sendRequest($batch->toRequest($this->requestFactory, $this->streamFactory));
+
+            if (null !== ($guards = $batch->guards())) {
+                BatchResult::fromResponse(
+                    $responseBatch,
+                    $this->responseFactory,
+                    $this->streamFactory
+                )->validate(...$guards);
+            }
+        }
+
         $actions = '';
         $collectionsWrite = [[]];
         $collectionsRead = [[]];
         $return = [];
         $guards = [];
 
-        if (! empty($this->types)) {
-            $batch = Batch::fromTypes(...$this->types);
-            $responseBatch = $this->client->sendRequest($batch->toRequest());
-            BatchResult::fromResponse($responseBatch)->validateBatch($batch);
-        }
-
-        if (empty($this->transactionalTypes)) {
-            return new Response(StatusCodeInterface::STATUS_OK);
+        if (0 === count($this->transactionalTypes)) {
+            return $this->responseFactory->createResponse(StatusCodeInterface::STATUS_OK);
         }
 
         foreach ($this->transactionalTypes as $key => $type) {
             $collectionsWrite[] = $type->collectionsWrite();
             $collectionsRead[] = $type->collectionsRead();
+
             if ($type instanceof GuardSupport
-                && ($guard = $type->guard())
-                && $contentId = $guard->contentId()
+                && ($guard = $type->guard()) !== null
             ) {
                 $guards[] = $guard;
                 $key = $guard->contentId();
@@ -111,11 +139,11 @@ final class TransactionalClient implements ClientInterface
                 $params,
                 array_unique($collectionsRead),
                 $waitForSync
-            )->toRequest()
+            )->toRequest($this->requestFactory, $this->streamFactory)
         );
 
-        if (! empty($guards)) {
-            \array_walk($guards, function ($guard) use ($response) {
+        if (0 !== count($guards)) {
+            \array_walk($guards, static function ($guard) use ($response) {
                 $guard($response);
             });
         }

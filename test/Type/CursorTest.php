@@ -28,7 +28,7 @@ class CursorTest extends TestCase
                 'FOR i IN 0..99 RETURN {"_key": i+1}',
                 [],
                 10
-            )->toRequest()
+            )->toRequest($this->requestFactory, $this->streamFactory)
         );
         $this->assertEquals(StatusCodeInterface::STATUS_CREATED, $response->getStatusCode());
 
@@ -45,7 +45,7 @@ class CursorTest extends TestCase
     public function it_fetches_next_batch(string $cursorId): string
     {
         $response = $this->client->sendRequest(
-            Cursor::nextBatch($cursorId)->toRequest()
+            Cursor::nextBatch($cursorId)->toRequest($this->requestFactory, $this->streamFactory)
         );
         $this->assertEquals(StatusCodeInterface::STATUS_OK, $response->getStatusCode());
 
@@ -63,9 +63,8 @@ class CursorTest extends TestCase
     public function it_deletes_cursor(string $cursorId): void
     {
         $response = $this->client->sendRequest(
-            Cursor::delete($cursorId)->toRequest()
+            Cursor::delete($cursorId)->toRequest($this->requestFactory, $this->streamFactory)
         );
         $this->assertEquals(StatusCodeInterface::STATUS_ACCEPTED, $response->getStatusCode());
     }
-
 }

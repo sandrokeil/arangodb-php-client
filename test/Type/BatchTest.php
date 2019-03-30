@@ -34,7 +34,7 @@ class BatchTest extends TestCase
         $batch = Batch::fromTypes(...$types);
 
         $response = $this->client->sendRequest(
-            $batch->toRequest()
+            $batch->toRequest($this->requestFactory, $this->streamFactory)
         );
 
         $this->assertEquals(

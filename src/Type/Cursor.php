@@ -11,11 +11,12 @@ declare(strict_types=1);
 
 namespace ArangoDb\Type;
 
-use ArangoDb\Http\VpackStream;
 use ArangoDb\Url;
+use ArangoDb\Util\Json;
 use Fig\Http\Message\RequestMethodInterface;
-use ArangoDb\Http\Request;
+use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\StreamFactoryInterface;
 
 final class Cursor implements CursorType
 {
@@ -54,24 +55,25 @@ final class Cursor implements CursorType
     ): CursorType {
         $params = [
             'query' => $query,
-            'bindVars' => $bindVars,
-            'batchSize' => $batchSize,
             'count' => $count,
-            'cache' => $cache,
         ];
 
-        if ($params['batchSize'] === null) {
-            unset($params['batchSize']);
+        if ($batchSize !== null) {
+            $params['batchSize'] = $batchSize;
         }
-        if ($params['cache'] === null) {
-            unset($params['cache']);
+
+        if (0 !== count($bindVars)) {
+            $params['bindVars'] = $bindVars;
         }
-        if (empty($params['bindVars'])) {
-            unset($params['bindVars']);
-        }
-        if (! empty($params)) {
+
+        if (0 !== count($options)) {
             $params['options'] = $options;
         }
+
+        if ($cache !== null) {
+            $params['cache'] = $cache;
+        }
+
         return new self(
             '',
             RequestMethodInterface::METHOD_POST,
@@ -95,20 +97,16 @@ final class Cursor implements CursorType
         );
     }
 
-    public function toRequest(): RequestInterface
-    {
-        if (empty($this->options)) {
-            return new Request(
-                $this->method,
-                Url::CURSOR . $this->uri
-            );
+    public function toRequest(
+        RequestFactoryInterface $requestFactory,
+        StreamFactoryInterface $streamFactory
+    ): RequestInterface {
+        $request = $requestFactory->createRequest($this->method, Url::CURSOR . $this->uri);
+
+        if (0 === count($this->options)) {
+            return $request;
         }
 
-        return new Request(
-            $this->method,
-            Url::CURSOR . $this->uri,
-            [],
-            new VpackStream($this->options)
-        );
+        return $request->withBody($streamFactory->createStream(Json::encode($this->options)));
     }
 }

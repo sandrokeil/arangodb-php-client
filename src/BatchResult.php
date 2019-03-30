@@ -14,11 +14,12 @@ namespace ArangoDb;
 use ArangoDb\Exception\InvalidArgumentException;
 use ArangoDb\Exception\LogicException;
 use ArangoDb\Guard\Guard;
-use ArangoDb\Http\Response;
 use ArangoDb\Type\BatchType;
 use Countable;
 use Iterator;
+use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\StreamFactoryInterface;
 
 final class BatchResult implements Countable, Iterator
 {
@@ -29,13 +30,22 @@ final class BatchResult implements Countable, Iterator
      */
     private $responses = [];
 
-    private function __construct()
+    /**
+     * @var ResponseFactoryInterface
+     */
+    private $responseFactory;
+
+    private function __construct(ResponseFactoryInterface $responseFactory)
     {
+        $this->responseFactory = $responseFactory;
     }
 
-    public static function fromResponse(ResponseInterface $batchResponse): BatchResult
-    {
-        if ('multipart/form-data' !== $batchResponse->getHeader('Content-Type')[0] ?? '') {
+    public static function fromResponse(
+        ResponseInterface $batchResponse,
+        ResponseFactoryInterface $responseFactory,
+        StreamFactoryInterface $streamFactory
+    ): BatchResult {
+        if ('multipart/form-data' !== ($batchResponse->getHeader('Content-Type')[0] ?? '')) {
             throw new InvalidArgumentException('Provided $batchResponse must have content type "multipart/form-data".');
         }
 
@@ -44,15 +54,18 @@ final class BatchResult implements Countable, Iterator
             trim($batchResponse->getBody()->getContents(), '--' . BatchType::MIME_BOUNDARY . '--')
         );
 
-        $self = new self();
+        $self = new self($responseFactory);
 
         foreach ($batches as $batch) {
             $data = HttpHelper::parseMessage($batch);
             [$httpCode, $headers, $body] = HttpHelper::parseMessage($data[2] ?? '');
 
-            $response = new Response($httpCode, $headers);
-            $response->getBody()->write($body);
-            $response->getBody()->rewind();
+            $response = $self->responseFactory->createResponse($httpCode);
+
+            foreach ($headers as $headerName => $header) {
+                $response = $response->withAddedHeader($headerName, $header);
+            }
+            $response = $response->withBody($streamFactory->createStream($body));
 
             if (isset($data[1]['Content-Id'][0])) {
                 $self->responses[$data[1]['Content-Id'][0]] = $response;
@@ -104,27 +117,30 @@ final class BatchResult implements Countable, Iterator
         return count($this->responses);
     }
 
-    public function current()
+    public function current(): ResponseInterface
     {
         return current($this->responses);
     }
 
-    public function next()
+    public function next(): void
     {
         next($this->responses);
     }
 
+    /**
+     * @return int|string|null
+     */
     public function key()
     {
         return key($this->responses);
     }
 
-    public function valid()
+    public function valid(): bool
     {
         return $this->key() !== null;
     }
 
-    public function rewind()
+    public function rewind(): void
     {
         reset($this->responses);
     }

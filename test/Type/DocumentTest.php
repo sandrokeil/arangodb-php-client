@@ -21,12 +21,14 @@ class DocumentTest extends TestCase
 {
     private const COLLECTION_NAME = 'DocumentTest';
 
-    public static function setUpBeforeClass()
+    public static function setUpBeforeClass(): void
     {
         parent::setUpBeforeClass();
 
         $createCollection = Collection::create(self::COLLECTION_NAME);
-        TestUtil::getClient()->sendRequest($createCollection->toRequest());
+        TestUtil::getClient()->sendRequest(
+            $createCollection->toRequest(TestUtil::getRequestFactory(), TestUtil::getStreamFactory())
+        );
     }
 
     /**
@@ -39,7 +41,7 @@ class DocumentTest extends TestCase
                 self::COLLECTION_NAME,
                 ['test' => 'valid'],
                 Document::FLAG_RETURN_NEW
-            )->toRequest()
+            )->toRequest($this->requestFactory, $this->streamFactory)
         );
         $this->assertEquals(StatusCodeInterface::STATUS_ACCEPTED, $response->getStatusCode());
 
@@ -64,7 +66,7 @@ class DocumentTest extends TestCase
             Document::FLAG_RETURN_NEW
         );
 
-        $response = $this->client->sendRequest($documents->toRequest());
+        $response = $this->client->sendRequest($documents->toRequest($this->requestFactory, $this->streamFactory));
 
         $content = TestUtil::getResponseContent($response);
 
@@ -88,7 +90,7 @@ class DocumentTest extends TestCase
      */
     public function it_reads_document(string $id): string
     {
-        $response = $this->client->sendRequest(Document::read($id)->toRequest());
+        $response = $this->client->sendRequest(Document::read($id)->toRequest($this->requestFactory, $this->streamFactory));
 
         $content = TestUtil::getResponseContent($response);
 
@@ -106,7 +108,9 @@ class DocumentTest extends TestCase
      */
     public function it_deletes_document(string $id): void
     {
-        $response = $this->client->sendRequest(Document::deleteOne($id)->toRequest());
+        $response = $this->client->sendRequest(
+            Document::deleteOne($id)->toRequest($this->requestFactory, $this->streamFactory)
+        );
 
         $this->assertEquals(StatusCodeInterface::STATUS_ACCEPTED, $response->getStatusCode());
     }
@@ -117,7 +121,9 @@ class DocumentTest extends TestCase
      */
     public function it_deletes_documents(array $keys): void
     {
-        $response = $this->client->sendRequest(Document::delete(self::COLLECTION_NAME, $keys)->toRequest());
+        $response = $this->client->sendRequest(
+            Document::delete(self::COLLECTION_NAME, $keys)->toRequest($this->requestFactory, $this->streamFactory)
+        );
 
         $this->assertEquals(StatusCodeInterface::STATUS_ACCEPTED, $response->getStatusCode());
     }
@@ -132,7 +138,7 @@ class DocumentTest extends TestCase
                 self::COLLECTION_NAME,
                 ['test' => 'valid', 'foo' => 'bar'],
                 Document::FLAG_RETURN_NEW
-            )->toRequest()
+            )->toRequest($this->requestFactory, $this->streamFactory)
         );
 
         $content = TestUtil::getResponseContent($response);
@@ -141,7 +147,8 @@ class DocumentTest extends TestCase
         $data = json_decode($content, true);
 
         $response = $this->client->sendRequest(
-            Document::updateOne($data['_id'], ['test' => 'more valid'], Document::FLAG_RETURN_NEW)->toRequest()
+            Document::updateOne($data['_id'], ['test' => 'more valid'], Document::FLAG_RETURN_NEW)
+                ->toRequest($this->requestFactory, $this->streamFactory)
         );
 
         $content = TestUtil::getResponseContent($response);
@@ -167,7 +174,7 @@ class DocumentTest extends TestCase
             Document::FLAG_RETURN_NEW
         );
 
-        $response = $this->client->sendRequest($documents->toRequest());
+        $response = $this->client->sendRequest($documents->toRequest($this->requestFactory, $this->streamFactory));
 
         $content = TestUtil::getResponseContent($response);
 
@@ -185,7 +192,7 @@ class DocumentTest extends TestCase
         );
 
         $response = $this->client->sendRequest(
-            Document::update(self::COLLECTION_NAME, $data, Document::FLAG_RETURN_NEW)->toRequest()
+            Document::update(self::COLLECTION_NAME, $data, Document::FLAG_RETURN_NEW)->toRequest($this->requestFactory, $this->streamFactory)
         );
 
         $content = TestUtil::getResponseContent($response);
@@ -208,7 +215,7 @@ class DocumentTest extends TestCase
                 self::COLLECTION_NAME,
                 ['test' => 'valid', 'foo' => 'bar'],
                 Document::FLAG_RETURN_NEW
-            )->toRequest()
+            )->toRequest($this->requestFactory, $this->streamFactory)
         );
 
         $content = TestUtil::getResponseContent($response);
@@ -217,7 +224,8 @@ class DocumentTest extends TestCase
         $data = json_decode($content, true);
 
         $response = $this->client->sendRequest(
-            Document::replaceOne($data['_id'], ['other' => 'more valid'], Document::FLAG_RETURN_NEW)->toRequest()
+            Document::replaceOne($data['_id'], ['other' => 'more valid'], Document::FLAG_RETURN_NEW)
+                ->toRequest($this->requestFactory, $this->streamFactory)
         );
 
         $content = TestUtil::getResponseContent($response);
@@ -244,7 +252,7 @@ class DocumentTest extends TestCase
             Document::FLAG_RETURN_NEW
         );
 
-        $response = $this->client->sendRequest($documents->toRequest());
+        $response = $this->client->sendRequest($documents->toRequest($this->requestFactory, $this->streamFactory));
 
         $content = TestUtil::getResponseContent($response);
 
@@ -263,7 +271,7 @@ class DocumentTest extends TestCase
         );
 
         $response = $this->client->sendRequest(
-            Document::replace(self::COLLECTION_NAME, $data, Document::FLAG_RETURN_NEW)->toRequest()
+            Document::replace(self::COLLECTION_NAME, $data, Document::FLAG_RETURN_NEW)->toRequest($this->requestFactory, $this->streamFactory)
         );
 
         $content = TestUtil::getResponseContent($response);
@@ -278,5 +286,4 @@ class DocumentTest extends TestCase
         $this->assertSame('more valid', $data[2]['new']['other'] ?? '');
         $this->assertArrayNotHasKey('test', $data[2]['new']);
     }
-
 }

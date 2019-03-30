@@ -6,9 +6,5 @@ parameters:
 		- php
 		- dist
 	reportUnmatchedIgnoredErrors: true
-	# ignore external code to keep sync easy
-	excludes_analyse:
-		- src/Http/Request.php
-		- src/Http/Response.php
-		- src/Http/Uri.php
-		- src/Http/Stream.php
+	ignoreErrors:
+		- '#and array|string|null results in an error#'

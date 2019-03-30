@@ -15,13 +15,14 @@ use ArangoDb\Exception\ConnectionException;
 use ArangoDb\Exception\NetworkException;
 use ArangoDb\Exception\RequestFailedException;
 use ArangoDb\Exception\TimeoutException;
-use ArangoDb\Http\VpackStream;
 use Fig\Http\Message\StatusCodeInterface;
-use ArangoDb\Http\Response;
+use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\StreamFactoryInterface;
 
-final class Client implements \Psr\Http\Client\ClientInterface
+final class Client implements ClientInterface
 {
     /**
      * Chunk size in bytes
@@ -63,26 +64,34 @@ final class Client implements \Psr\Http\Client\ClientInterface
     private $headerLines = '';
 
     /**
-     * Default headers which can be overridden by a request
-     *
-     * @var array
-     */
-    private $defaultHeaders;
-
-    /**
      * @var string
      */
     private $database = '';
 
     /**
-     * @param array|ClientOptions $options
-     * @param array $defaultHeaders PSR-7 headers
+     * @var ResponseFactoryInterface
      */
-    public function __construct($options, array $defaultHeaders = [])
-    {
+    private $responseFactory;
+
+    /**
+     * @var StreamFactoryInterface
+     */
+    private $streamFactory;
+
+    /**
+     * @param array|ClientOptions $options
+     * @param ResponseFactoryInterface $responseFactory
+     * @param StreamFactoryInterface $streamFactory
+     */
+    public function __construct(
+        $options,
+        ResponseFactoryInterface $responseFactory,
+        StreamFactoryInterface $streamFactory
+    ) {
         $this->options = $options instanceof ClientOptions ? $options : new ClientOptions($options);
         $this->useKeepAlive = ($this->options[ClientOptions::OPTION_CONNECTION] === 'Keep-Alive');
-        $this->defaultHeaders = $defaultHeaders;
+        $this->responseFactory = $responseFactory;
+        $this->streamFactory = $streamFactory;
         $this->updateCommonHttpHeaders();
     }
 
@@ -101,32 +110,21 @@ final class Client implements \Psr\Http\Client\ClientInterface
     public function sendRequest(RequestInterface $request): ResponseInterface
     {
         try {
-            $body = $request->getBody();
+            $body = $request->getBody()->getContents();
             $method = $request->getMethod();
 
-            $customHeaders = array_merge($this->defaultHeaders, $request->getHeaders());
+            $customHeaders = $request->getHeaders();
             unset($customHeaders['Connection'], $customHeaders['Content-Length']);
 
             if (! isset($customHeaders['Content-Type'])) {
                 $customHeaders['Content-Type'] = ['application/json'];
             }
 
-            $useVpack = false;
-
             $customHeader = '';
             foreach ($customHeaders as $headerKey => $headerValues) {
                 foreach ($headerValues as $headerValue) {
-                    if ($headerKey === 'Content-Type' && $headerValue === 'application/x-velocypack') {
-                        $useVpack = true;
-                    }
                     $customHeader .= $headerKey . ': ' . $headerValue . self::EOL;
                 }
-            }
-
-            if ($useVpack === true && $body instanceof VpackStream) {
-                $body = $body->vpack()->toBinary();
-            } else {
-                $body = $body->getContents();
             }
         } catch (\Throwable $e) {
             throw RequestFailedException::ofRequest($request, $e);
@@ -146,10 +144,10 @@ final class Client implements \Psr\Http\Client\ClientInterface
                 $body,
                 $method
             );
-
+            // TODO https://docs.arangodb.com/3.4/Manual/Architecture/DeploymentModes/ActiveFailover/Architecture.html
             $status = stream_get_meta_data($this->handle);
 
-            if (! empty($status['timed_out'])) {
+            if (true === $status['timed_out']) {
                 throw TimeoutException::ofRequest($request);
             }
             if (! $this->useKeepAlive) {
@@ -160,12 +158,13 @@ final class Client implements \Psr\Http\Client\ClientInterface
         } catch (\Throwable $e) {
             throw NetworkException::with($request, $e);
         }
+        $response = $this->responseFactory->createResponse($httpCode);
 
-        return new Response(
-            $httpCode,
-            $headers,
-            new VpackStream($body, $useVpack)
-        );
+        foreach ($headers as $headerName => $header) {
+            $response = $response->withAddedHeader($headerName, $header);
+        }
+
+        return $response->withBody($this->streamFactory->createStream($body));
     }
 
     /**

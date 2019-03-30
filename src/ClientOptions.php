@@ -108,17 +108,17 @@ final class ClientOptions implements \ArrayAccess
             $this->options[self::OPTION_ENDPOINT]
         );
 
-        if (empty($this->options[self::OPTION_ENDPOINT])) {
+        if (! isset($this->options[self::OPTION_ENDPOINT])) {
             throw new LogicException('Endpoint not specified');
         }
 
-        if (! empty($this->options[self::OPTION_AUTH_TYPE])
+        if (isset($this->options[self::OPTION_AUTH_TYPE])
             && ! in_array($this->options[self::OPTION_AUTH_TYPE], self::getSupportedAuthTypes(), true)
         ) {
             throw new LogicException('Unsupported authorization method: ' . $this->options[self::OPTION_AUTH_TYPE]);
         }
 
-        if (! empty($this->options[self::OPTION_CONNECTION])
+        if (isset($this->options[self::OPTION_CONNECTION])
             && ! in_array($this->options[self::OPTION_CONNECTION], self::getSupportedConnectionTypes(), true)
         ) {
             throw new LogicException('Unsupported connection value: ' . $this->options[self::OPTION_CONNECTION]);

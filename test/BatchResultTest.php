@@ -13,8 +13,8 @@ namespace ArangoDbTest\Type;
 
 use ArangoDb\BatchResult;
 use ArangoDb\Exception\InvalidArgumentException;
+use ArangoDb\Exception\LogicException;
 use ArangoDb\Guard\Guard;
-use ArangoDb\Http\Response;
 use ArangoDb\Type\Batch;
 use ArangoDb\Type\Collection;
 use ArangoDb\Type\Document;
@@ -32,12 +32,36 @@ class BatchResultTest extends TestCase
      */
     public function it_throws_exception_if_not_multipart(): void
     {
-        $response = new Response(StatusCodeInterface::STATUS_OK, ['Content-type' => 'application/json']);
+        $response = $this->responseFactory->createResponse();
+        $response->withHeader('Content-type', 'application/json');
 
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Provided $batchResponse');
 
-        BatchResult::fromResponse($response);
+        BatchResult::fromResponse($response, $this->responseFactory, $this->streamFactory);
+    }
+
+    /**
+     * @test
+     */
+    public function it_throws_exception_if_should_validate_with_no_guards(): void
+    {
+        $create = Collection::create(self::COLLECTION_NAME);
+
+        $types = [
+            $create
+        ];
+
+        $batch = Batch::fromTypes(...$types);
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('No guards are provided');
+
+        $response = $this->client->sendRequest(
+            $batch->toRequest($this->requestFactory, $this->streamFactory)
+        );
+        $batchResult = BatchResult::fromResponse($response, $this->responseFactory, $this->streamFactory);
+        $batchResult->validateBatch($batch);
     }
 
     /**
@@ -71,9 +95,9 @@ class BatchResultTest extends TestCase
         $batch = Batch::fromTypes(...$types);
 
         $response = $this->client->sendRequest(
-            $batch->toRequest()
+            $batch->toRequest($this->requestFactory, $this->streamFactory)
         );
-        $batchResult = BatchResult::fromResponse($response);
+        $batchResult = BatchResult::fromResponse($response, $this->responseFactory, $this->streamFactory);
         $batchResult->validate(...$batch->guards());
         $this->assertSame(4, $guard->counter);
     }
@@ -114,7 +138,7 @@ class BatchResultTest extends TestCase
         $batch = Batch::fromTypes(...$types);
 
         $response = $this->client->sendRequest(
-            $batch->toRequest()
+            $batch->toRequest($this->requestFactory, $this->streamFactory)
         );
 
         $this->assertEquals(
@@ -122,7 +146,7 @@ class BatchResultTest extends TestCase
             $response->getStatusCode()
         );
 
-        $batchResult = BatchResult::fromResponse($response);
+        $batchResult = BatchResult::fromResponse($response, $this->responseFactory, $this->streamFactory);
 
         $this->assertCount(4, $batchResult);
 
@@ -136,15 +160,16 @@ class BatchResultTest extends TestCase
 
             $data = json_decode($data, true);
             $this->assertNotNull($data);
-            $this->assertInternalType('array', $data);
+            $this->assertTrue(is_array($data));
             $this->assertNotEmpty($data);
         }
         $batchResult->validate(...$batch->guards());
         $this->assertSame(1, $guard->counter);
         $this->assertSame(self::COLLECTION_NAME, $guard->name);
+        $this->assertCount(4, $batchResult->responses());
     }
 
-    protected function tearDown()
+    protected function tearDown(): void
     {
         TestUtil::deleteCollection($this->client, self::COLLECTION_NAME);
     }

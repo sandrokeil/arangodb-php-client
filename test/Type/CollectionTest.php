@@ -20,7 +20,7 @@ class CollectionTest extends TestCase
 {
     private const COLLECTION_NAME = 'col';
 
-    protected function tearDown()
+    protected function tearDown(): void
     {
         TestUtil::deleteCollection($this->client, self::COLLECTION_NAME);
     }
@@ -34,7 +34,7 @@ class CollectionTest extends TestCase
         $this->createTestCollection('col2');
 
         $response = $this->client->sendRequest(
-            Collection::listAll()->toRequest()
+            Collection::listAll()->toRequest($this->requestFactory, $this->streamFactory)
         );
         $this->assertEquals(StatusCodeInterface::STATUS_OK, $response->getStatusCode());
 
@@ -51,7 +51,7 @@ class CollectionTest extends TestCase
         $this->createTestCollection(self::COLLECTION_NAME);
 
         $response = $this->client->sendRequest(
-            Collection::count(self::COLLECTION_NAME)->toRequest()
+            Collection::count(self::COLLECTION_NAME)->toRequest($this->requestFactory, $this->streamFactory)
         );
 
         $content = TestUtil::getResponseContent($response);
@@ -68,7 +68,7 @@ class CollectionTest extends TestCase
         $this->createTestCollection(self::COLLECTION_NAME);
 
         $response = $this->client->sendRequest(
-            Collection::info(self::COLLECTION_NAME)->toRequest()
+            Collection::info(self::COLLECTION_NAME)->toRequest($this->requestFactory, $this->streamFactory)
         );
 
         $content = TestUtil::getResponseContent($response);
@@ -80,7 +80,7 @@ class CollectionTest extends TestCase
     private function createTestCollection(string $name): void
     {
         $response = $this->client->sendRequest(
-            Collection::create($name)->toRequest()
+            Collection::create($name)->toRequest($this->requestFactory, $this->streamFactory)
         );
         $this->assertEquals(StatusCodeInterface::STATUS_OK, $response->getStatusCode());
     }

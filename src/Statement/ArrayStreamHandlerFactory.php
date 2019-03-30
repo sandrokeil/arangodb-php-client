@@ -9,16 +9,14 @@
 
 declare(strict_types=1);
 
-namespace ArangoDb\Type;
+namespace ArangoDb\Statement;
 
-use Psr\Http\Message\RequestFactoryInterface;
-use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\StreamFactoryInterface;
+use Psr\Http\Message\StreamInterface;
 
-interface Type
+class ArrayStreamHandlerFactory implements StreamHandlerFactoryInterface
 {
-    public function toRequest(
-        RequestFactoryInterface $requestFactory,
-        StreamFactoryInterface $streamFactory
-    ): RequestInterface;
+    public function createStreamHandler(StreamInterface $body): StreamHandler
+    {
+        return new ArrayStreamHandler($body);
+    }
 }

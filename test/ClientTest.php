@@ -13,11 +13,9 @@ namespace ArangoDbTest;
 
 use ArangoDb\Type\Collection;
 use ArangoDb\Type\Document;
-use ArangoDb\Http\VpackStream;
 use ArangoDb\Url;
 use Fig\Http\Message\RequestMethodInterface;
 use Fig\Http\Message\StatusCodeInterface;
-use ArangoDb\Http\Request;
 
 class ClientTest extends TestCase
 {
@@ -27,15 +25,22 @@ class ClientTest extends TestCase
     public function it_supports_head_requests(): void
     {
         $createCollection = Collection::create(__FUNCTION__);
-        $response = $this->client->sendRequest($createCollection->toRequest());
+        $response = $this->client->sendRequest(
+            $createCollection->toRequest(
+                $this->requestFactory,
+                $this->streamFactory
+            )
+        );
 
         $this->assertEquals(StatusCodeInterface::STATUS_OK, $response->getStatusCode());
 
-        $response = $this->client->sendRequest(Document::create(__FUNCTION__, ['_key' => 'a123'])->toRequest());
+        $response = $this->client->sendRequest(
+            Document::create(__FUNCTION__, ['_key' => 'a123'])->toRequest($this->requestFactory, $this->streamFactory)
+        );
         $this->assertEquals(StatusCodeInterface::STATUS_ACCEPTED, $response->getStatusCode());
 
         $response = $this->client->sendRequest(
-            new Request(
+            $this->requestFactory->createRequest(
                 RequestMethodInterface::METHOD_HEAD,
                 Url::DOCUMENT .'/' . __FUNCTION__ . '/a123'
             )
@@ -50,21 +55,15 @@ class ClientTest extends TestCase
     public function it_creates_collection(): void
     {
         $createCollection = Collection::create('myCol');
-        $response = $this->client->sendRequest($createCollection->toRequest());
+        $response = $this->client->sendRequest(
+            $createCollection->toRequest($this->requestFactory, $this->streamFactory)
+        );
 
         $this->assertEquals(StatusCodeInterface::STATUS_OK, $response->getStatusCode());
 
         $body = $response->getBody();
-
-        if ($body instanceof VpackStream) {
-            $content = $body->vpack()->toJson();
-            $this->assertEquals($content, $body->getContents());
-        } else {
-            $content = $body->getContents();
-        }
+        $content = $body->getContents();
 
         $this->assertNotFalse(strpos($content, '"code":200'));
     }
-
-
 }

@@ -9,16 +9,8 @@
 
 declare(strict_types=1);
 
-namespace ArangoDb\Type;
+namespace ArangoDb\Exception;
 
-use Psr\Http\Message\RequestFactoryInterface;
-use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\StreamFactoryInterface;
-
-interface Type
+class JsonException extends RuntimeException
 {
-    public function toRequest(
-        RequestFactoryInterface $requestFactory,
-        StreamFactoryInterface $streamFactory
-    ): RequestInterface;
 }

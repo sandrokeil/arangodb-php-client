@@ -10,6 +10,7 @@
 namespace ArangoDbTest;
 
 use ArangoDb\Statement;
+use ArangoDb\Type\Cursor;
 
 class StatementTest extends TestCase
 {
@@ -22,14 +23,13 @@ class StatementTest extends TestCase
 
         $statement = new Statement(
             $this->client,
-            \ArangoDb\Type\Cursor::create(
+            Cursor::create(
                 'FOR i IN 1..' . $count . ' RETURN {"_key": i+1}',
                 [],
                 $count
-            )->toRequest(),
-            [
-                Statement::ENTRY_TYPE => Statement::ENTRY_TYPE_ARRAY,
-            ]
+            )->toRequest($this->requestFactory, $this->streamFactory),
+            $this->requestFactory,
+            $this->streamHandlerFactory
         );
         $this->assertEquals(0, $statement->fetches());
 
@@ -53,14 +53,13 @@ class StatementTest extends TestCase
     {
         $statement = new Statement(
             $this->client,
-            \ArangoDb\Type\Cursor::create(
+            Cursor::create(
                 'FOR i IN 0..99 RETURN {"_key": i+1}',
                 [],
                 10
-            )->toRequest(),
-            [
-                Statement::ENTRY_TYPE => Statement::ENTRY_TYPE_ARRAY,
-            ]
+            )->toRequest($this->requestFactory, $this->streamFactory),
+            $this->requestFactory,
+            $this->streamHandlerFactory
         );
         $this->assertEquals(0, $statement->fetches());
 
@@ -84,14 +83,13 @@ class StatementTest extends TestCase
     {
         $statement = new Statement(
             $this->client,
-            \ArangoDb\Type\Cursor::create(
+            Cursor::create(
                 'FOR i IN 0..99 RETURN {"_key": i+1}',
                 [],
                 10
-            )->toRequest(),
-            [
-                Statement::ENTRY_TYPE => Statement::ENTRY_TYPE_ARRAY,
-            ]
+            )->toRequest($this->requestFactory, $this->streamFactory),
+            $this->requestFactory,
+            $this->streamHandlerFactory
         );
 
         $data = [];
@@ -127,10 +125,9 @@ class StatementTest extends TestCase
     {
         $statement = new Statement(
             $this->client,
-            \ArangoDb\Type\Cursor::create('RETURN {"_key": 1}')->toRequest(),
-            [
-                Statement::ENTRY_TYPE => Statement::ENTRY_TYPE_ARRAY,
-            ]
+            Cursor::create('RETURN {"_key": 1}')->toRequest($this->requestFactory, $this->streamFactory),
+            $this->requestFactory,
+            $this->streamHandlerFactory
         );
 
         $data = $statement->fetchAll();
@@ -146,10 +143,9 @@ class StatementTest extends TestCase
     {
         $statement = new Statement(
             $this->client,
-            \ArangoDb\Type\Cursor::create('RETURN "test"')->toRequest(),
-            [
-                Statement::ENTRY_TYPE => Statement::ENTRY_TYPE_ARRAY,
-            ]
+            Cursor::create('RETURN "test"')->toRequest($this->requestFactory, $this->streamFactory),
+            $this->requestFactory,
+            $this->streamHandlerFactory
         );
 
         $data = $statement->fetchAll();
@@ -161,51 +157,55 @@ class StatementTest extends TestCase
     /**
      * @test
      */
-    public function it_supports_json_arbitrary_data(): void
+    public function it_supports_count(): void
     {
         $statement = new Statement(
             $this->client,
-            \ArangoDb\Type\Cursor::create('RETURN "test"')->toRequest(),
-            [
-                Statement::ENTRY_TYPE => Statement::ENTRY_TYPE_JSON,
-            ]
+            Cursor::create(
+                'FOR i IN 0..99  LIMIT 50 RETURN {"_key": i+1}',
+                [],
+                10,
+                true,
+                null,
+                ['fullCount' => true]
+            )->toRequest($this->requestFactory, $this->streamFactory),
+            $this->requestFactory,
+            $this->streamHandlerFactory
         );
 
-        $data = $statement->fetchAll();
-        $this->assertNotEmpty($data);
-        $this->assertEquals('["test"]', $data);
+        $this->assertEquals(100, $statement->fullCount());
+        $this->assertEquals(50, $statement->resultCount());
         $this->assertEquals(1, $statement->fetches());
+        $this->assertCount(10, $statement->result());
+        $this->assertEquals(50, $statement->count());
+        $this->assertEquals(5, $statement->fetches());
+        $this->assertCount(10, $statement->result());
+        $this->assertCount(50, $statement->fetchAll());
     }
 
     /**
      * @test
      */
-    public function it_returns_all_json_data_with_batch_size(): void
+    public function it_fetches_data(): void
     {
         $statement = new Statement(
             $this->client,
-            \ArangoDb\Type\Cursor::create(
-                'FOR i IN 0..99 RETURN {"_key": i+1}',
+            Cursor::create(
+                'FOR i IN 0..99  LIMIT 50 RETURN {"_key": i+1}',
                 [],
                 10
-            )->toRequest(),
-            [
-                Statement::ENTRY_TYPE => Statement::ENTRY_TYPE_JSON,
-            ]
+            )->toRequest($this->requestFactory, $this->streamFactory),
+            $this->requestFactory,
+            $this->streamHandlerFactory
         );
-        $this->assertEquals(0, $statement->fetches());
 
-        $data = $statement->fetchAll();
+        $loop = 0;
 
-        $this->assertNotEmpty($data);
-        $this->assertStringStartsWith(
-            '[{"_key":1},{"_key":2},{"_key":3},{"_key":4},{"_key":5},{"_key":6},{"_key":7},{',
-            $data
-        );
-        $this->assertStringEndsWith(
-            '{"_key":93},{"_key":94},{"_key":95},{"_key":96},{"_key":97},{"_key":98},{"_key":99},{"_key":100}]',
-            $data
-        );
-        $this->assertEquals(10, $statement->fetches());
+        while ($data = $statement->fetch()) {
+            ++$loop;
+            $this->assertCount(10, $data);
+        }
+        $this->assertEquals(5, $loop);
+        $this->assertEquals(5, $statement->fetches());
     }
 }

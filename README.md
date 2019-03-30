@@ -8,14 +8,12 @@
 [![License](https://poser.pugx.org/sandrokeil/arangodb-php-client/license.png)](https://packagist.org/packages/sandrokeil/arangodb-php-client)
 
 
-[ArangoDB](https://arangodb.com/ "native multi-model database") PHP PSR 7/18 client implementation with
-[Velcoypack](https://github.com/arangodb/velocypack "a fast and compact format for serialization and storage") support
-via [martin-schilling/php-velocypack](https://github.com/martin-schilling/php-velocypack/).
+[ArangoDB](https://arangodb.com/ "native multi-model database") PHP PSR 7/17/18 client implementation.
 
 ## Requirements
 
 - PHP >= 7.1
-- ArangoDB server version >= 3.4 (3.3 has some issues with Velocypack)
+- ArangoDB server version >= 3.3
 
 ## Setup
 

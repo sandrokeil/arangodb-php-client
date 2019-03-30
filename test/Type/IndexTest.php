@@ -27,7 +27,7 @@ class IndexTest extends TestCase
     public function it_creates_collection_index(): void
     {
         $createCollection = Collection::create(self::COLLECTION_NAME);
-        $response = $this->client->sendRequest($createCollection->toRequest());
+        $response = $this->client->sendRequest($createCollection->toRequest($this->requestFactory, $this->streamFactory));
 
         $this->assertEquals(StatusCodeInterface::STATUS_OK, $response->getStatusCode());
 
@@ -47,7 +47,7 @@ class IndexTest extends TestCase
                 'sparse' => false,
             ]
         );
-        $response = $this->client->sendRequest($createCollection->toRequest());
+        $response = $this->client->sendRequest($createCollection->toRequest($this->requestFactory, $this->streamFactory));
 
         $this->assertEquals(StatusCodeInterface::STATUS_CREATED, $response->getStatusCode());
 
@@ -62,7 +62,7 @@ class IndexTest extends TestCase
      */
     public function it_reads_all_indexes(): string
     {
-        $response = $this->client->sendRequest(Index::listAll(self::COLLECTION_NAME)->toRequest());
+        $response = $this->client->sendRequest(Index::listAll(self::COLLECTION_NAME)->toRequest($this->requestFactory, $this->streamFactory));
 
         $this->assertEquals(StatusCodeInterface::STATUS_OK, $response->getStatusCode());
 
@@ -78,7 +78,7 @@ class IndexTest extends TestCase
      */
     public function it_reads_index(string $indexName): string
     {
-        $response = $this->client->sendRequest(Index::info($indexName)->toRequest());
+        $response = $this->client->sendRequest(Index::info($indexName)->toRequest($this->requestFactory, $this->streamFactory));
 
         $this->assertEquals(StatusCodeInterface::STATUS_OK, $response->getStatusCode());
 
@@ -93,7 +93,7 @@ class IndexTest extends TestCase
      */
     public function it_deletes_index(string $indexName): void
     {
-        $response = $this->client->sendRequest(Index::delete($indexName)->toRequest());
+        $response = $this->client->sendRequest(Index::delete($indexName)->toRequest($this->requestFactory, $this->streamFactory));
 
         $this->assertEquals(StatusCodeInterface::STATUS_OK, $response->getStatusCode());
 

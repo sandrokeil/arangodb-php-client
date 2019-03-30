@@ -11,10 +11,6 @@ declare(strict_types=1);
 
 namespace ArangoDb;
 
-use ArangoDb\Http\VpackStream;
-use Psr\Http\Message\ResponseInterface;
-use Velocypack\Vpack;
-
 final class HttpHelper
 {
     /**
@@ -56,67 +52,5 @@ final class HttpHelper
             $headers,
             $body,
         ];
-    }
-
-
-    /**
-     * @param ResponseInterface $response
-     * @param string|null $key
-     * @return string|bool|int|float
-     */
-    public static function responseContentAsJson(ResponseInterface $response, string $key = null)
-    {
-        $body = $response->getBody();
-
-        if ($body instanceof VpackStream) {
-            if ($key === null) {
-                return $body->vpack()->toJson();
-            }
-            $value = $body->vpack()->access($key);
-
-            if ($value instanceof Vpack) {
-                $value = $value->toJson();
-            }
-
-            return $value;
-        }
-        if ($key === null) {
-            return $body->getContents();
-        }
-        // TODO check key
-        $value = \json_decode($body->getContents())->{$key};
-        if (! \is_scalar($value)) {
-            $value = \json_encode($value);
-        }
-
-        return $value;
-    }
-
-    /**
-     * @param ResponseInterface $response
-     * @param string|null $key
-     * @return string|bool|int|float|array
-     */
-    public static function responseContentAsArray(ResponseInterface $response, string $key = null)
-    {
-        $body = $response->getBody();
-
-        if ($body instanceof VpackStream) {
-            if ($key === null) {
-                return $body->vpack()->toArray();
-            }
-            $value = $body->vpack()->access($key);
-
-            if ($value instanceof Vpack) {
-                $value = $value->toArray();
-            }
-
-            return $value;
-        }
-        if ($key === null) {
-            return $body->getContents();
-        }
-        // TODO check key
-        return \json_decode($body->getContents(), true)[$key] ?? null;
     }
 }

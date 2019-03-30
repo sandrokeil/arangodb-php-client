@@ -9,22 +9,16 @@
 
 namespace ArangoDb\Http;
 
+use ArangoDb\Exception\RuntimeException;
+use ArangoDb\Util\Json;
 use Psr\Http\Message\StreamInterface;
-use Velocypack\Vpack;
 
-final class VpackStream implements StreamInterface
+final class JsonStream implements StreamInterface
 {
-    /**
-     * Is string a vpack binary
-     *
-     * @var bool
-     */
-    private $isVpack;
-
     /**
      * Original data
      *
-     * @var string|array|Vpack
+     * @var string|array
      */
     private $data;
 
@@ -42,25 +36,21 @@ final class VpackStream implements StreamInterface
 
     /**
      * @param string|array $data
-     * @param bool $isVpack
      */
-    public function __construct($data, bool $isVpack = false)
+    public function __construct($data)
     {
         $this->data = $data;
-        $this->isVpack = $isVpack;
     }
 
-    public function vpack(): Vpack
+    public function toJson(): string
     {
-        if ($this->data instanceof Vpack) {
-            return $this->data;
-        }
+        return $this->getContents();
+    }
+
+    public function toArray(): array
+    {
         if (is_string($this->data)) {
-            $this->data = $this->isVpack
-                ? Vpack::fromBinary($this->data)
-                : Vpack::fromJson($this->data);
-        } else {
-            $this->data = Vpack::fromArray($this->data);
+            return Json::decode($this->data);
         }
         return $this->data;
     }
@@ -76,9 +66,10 @@ final class VpackStream implements StreamInterface
         $this->buffer = null;
     }
 
-    public function detach(): void
+    public function detach()
     {
         $this->close();
+        return null;
     }
 
     public function getSize(): int
@@ -92,7 +83,7 @@ final class VpackStream implements StreamInterface
 
     public function tell(): int
     {
-        throw new \RuntimeException('Cannot determine the position of a VpackStream');
+        throw new RuntimeException('Cannot determine the position of a JsonStream');
     }
 
     public function eof(): bool
@@ -114,7 +105,7 @@ final class VpackStream implements StreamInterface
      */
     public function seek($offset, $whence = SEEK_SET): void
     {
-        throw new \RuntimeException('Cannot seek a VpackStream');
+        throw new RuntimeException('Cannot seek a JsonStream');
     }
 
     public function rewind(): void
@@ -127,12 +118,9 @@ final class VpackStream implements StreamInterface
         return false;
     }
 
-    /**
-     * @param string $string
-     */
-    public function write($string): void
+    public function write($string): int
     {
-        throw new \RuntimeException('Cannot write a VpackStream');
+        throw new RuntimeException('Cannot write a JsonStream');
     }
 
     public function isReadable(): bool
@@ -166,23 +154,14 @@ final class VpackStream implements StreamInterface
 
     public function getContents(): string
     {
-        if ($this->data instanceof Vpack) {
-            return $this->data->toJson();
+        if (is_string($this->data)) {
+            return $this->data;
         }
-
-        if ($this->isVpack === true && is_string($this->data) && $this->data !== '') {
-            $this->data = Vpack::fromBinary($this->data);
-            return $this->data->toJson();
-        }
-
-        if (! is_string($this->data)) {
-            $this->data = json_encode($this->data);
-        }
-        return $this->data;
+        return Json::encode($this->data);
     }
 
     /**
-     * @param null $key
+     * @param string|null $key
      * @return array|mixed|null
      */
     public function getMetadata($key = null)
