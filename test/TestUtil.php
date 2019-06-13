@@ -15,6 +15,8 @@ use ArangoDb\Client;
 use ArangoDb\Exception\ArangoDbException;
 use ArangoDb\Statement\ArrayStreamHandlerFactory;
 use ArangoDb\Statement\StreamHandlerFactoryInterface;
+use ArangoDb\Statement\VpackStreamHandler;
+use ArangoDb\Statement\VpackStreamHandlerFactory;
 use ArangoDb\Type\Database;
 use ArangoDb\ClientOptions;
 use ArangoDb\Url;
@@ -26,8 +28,11 @@ use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamFactoryInterface;
+use Psr\Http\Message\StreamInterface;
 use Zend\Diactoros\Request;
 use Zend\Diactoros\Response;
+use Zend\Diactoros\Stream;
+use Velocypack\Vpack;
 use Zend\Diactoros\StreamFactory;
 
 final class TestUtil
@@ -66,19 +71,55 @@ final class TestUtil
         {
             public function createRequest(string $method, $uri): RequestInterface
             {
-                return new Request($uri, $method);
+                $type = 'application/' . (getenv('USE_VPACK') === 'true' ? 'x-velocypack' : 'json');
+
+                $request = new Request($uri, $method);
+                $request = $request->withAddedHeader('Content-Type', $type);
+                return $request->withAddedHeader('Accept', $type);
             }
         };
     }
 
-    public static function getStreamFactory(): StreamFactoryInterface
+    public static function getStreamFactory(bool $forceJson = false): StreamFactoryInterface
     {
-        return new StreamFactory();
+        if (true === $forceJson || getenv('USE_VPACK') !== 'true') {
+            return new StreamFactory();
+        }
+
+        return new class implements StreamFactoryInterface
+        {
+            public function createStream(string $content = '') : StreamInterface
+            {
+                $vpack = strpos($content, '{') === 0 || strpos($content, '[') === 0 ? Vpack::fromJson($content) : Vpack::fromBinary($content);
+                $resource = fopen('php://temp', 'r+');
+                fwrite($resource, $vpack->toBinary());
+                rewind($resource);
+
+                return $this->createStreamFromResource($resource);
+            }
+
+            public function createStreamFromFile(string $file, string $mode = 'r') : StreamInterface
+            {
+                return new Stream($file, $mode);
+            }
+
+            public function createStreamFromResource($resource) : StreamInterface
+            {
+                if (! is_resource($resource) || 'stream' !== get_resource_type($resource)) {
+                    throw new \InvalidArgumentException(
+                        'Invalid stream provided; must be a stream resource'
+                    );
+                }
+                return new Stream($resource);
+            }
+        };
     }
 
     public static function getStreamHandlerFactory(): StreamHandlerFactoryInterface
     {
-        return new ArrayStreamHandlerFactory();
+        return getenv('USE_VPACK') === 'true'
+            ? new VpackStreamHandlerFactory(VpackStreamHandler::RESULT_TYPE_ARRAY)
+            : new ArrayStreamHandlerFactory();
     }
 
     public static function createDatabase(): void
@@ -122,9 +163,13 @@ final class TestUtil
         );
     }
 
-    public static function getResponseContent(ResponseInterface $response): string
+    public static function getResponseContent(ResponseInterface $response, bool $forceJson = false): array
     {
-        return $response->getBody()->getContents();
+        $body = $response->getBody();
+        $body->rewind();
+        return getenv('USE_VPACK') === 'true' && false === $forceJson
+            ? Vpack::fromBinary($body->getContents())->toArray()
+            : json_decode($body->getContents(), true);
     }
 
     public static function getDatabaseName(): string

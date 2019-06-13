@@ -33,6 +33,11 @@ interface QueryResult
     public function result();
 
     /**
+     * @return string|array|object Complete response body data
+     */
+    public function raw();
+
+    /**
      * Get the total number of results in the cursor if available. Does not load all data.
      *
      * @return int Total number of results in the cursor

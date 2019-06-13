@@ -31,9 +31,9 @@ class IndexTest extends TestCase
 
         $this->assertEquals(StatusCodeInterface::STATUS_OK, $response->getStatusCode());
 
-        $content = TestUtil::getResponseContent($response);
+        $data = TestUtil::getResponseContent($response);
 
-        $this->assertNotFalse(strpos($content, '"code":200'));
+        $this->assertSame(200, $data['code']);
 
         $createCollection = Index::create(
             self::COLLECTION_NAME,
@@ -51,9 +51,9 @@ class IndexTest extends TestCase
 
         $this->assertEquals(StatusCodeInterface::STATUS_CREATED, $response->getStatusCode());
 
-        $content = TestUtil::getResponseContent($response);
+        $data = TestUtil::getResponseContent($response);
 
-        $this->assertNotFalse(strpos($content, '"code":201'));
+        $this->assertSame(201, $data['code']);
     }
 
     /**
@@ -66,8 +66,7 @@ class IndexTest extends TestCase
 
         $this->assertEquals(StatusCodeInterface::STATUS_OK, $response->getStatusCode());
 
-        $content = TestUtil::getResponseContent($response);
-        $data = json_decode($content, true);
+        $data = TestUtil::getResponseContent($response);
 
         return $data['indexes'][1]['id'] ?? '';
     }
@@ -82,8 +81,8 @@ class IndexTest extends TestCase
 
         $this->assertEquals(StatusCodeInterface::STATUS_OK, $response->getStatusCode());
 
-        $content = TestUtil::getResponseContent($response);
-        $this->assertNotFalse(strpos($content, '"code":200'));
+        $data = TestUtil::getResponseContent($response);
+        $this->assertSame(200, $data['code']);
         return $indexName;
     }
 
@@ -97,8 +96,8 @@ class IndexTest extends TestCase
 
         $this->assertEquals(StatusCodeInterface::STATUS_OK, $response->getStatusCode());
 
-        $content = TestUtil::getResponseContent($response);
+        $data = TestUtil::getResponseContent($response);
 
-        $this->assertNotFalse(strpos($content, '"code":200'));
+        $this->assertSame(200, $data['code']);
     }
 }

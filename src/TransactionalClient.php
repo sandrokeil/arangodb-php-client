@@ -17,7 +17,6 @@ use ArangoDb\Type\Transaction as TransactionType;
 use ArangoDb\Type\Transactional;
 use ArangoDb\Type\Type;
 use Fig\Http\Message\StatusCodeInterface;
-use function MongoDB\BSON\toPHP;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\RequestInterface;
@@ -61,16 +60,23 @@ final class TransactionalClient implements ClientInterface
      */
     private $streamFactory;
 
+    /**
+     * @var StreamFactoryInterface
+     */
+    private $streamFactoryBatch;
+
     public function __construct(
         ClientInterface $client,
         RequestFactoryInterface $requestFactory,
         ResponseFactoryInterface $responseFactory,
-        StreamFactoryInterface $streamFactory
+        StreamFactoryInterface $streamFactory,
+        StreamFactoryInterface $streamFactoryBatch
     ) {
         $this->client = $client;
         $this->requestFactory = $requestFactory;
         $this->responseFactory = $responseFactory;
         $this->streamFactory = $streamFactory;
+        $this->streamFactoryBatch = $streamFactoryBatch;
     }
 
     public function sendRequest(RequestInterface $request): ResponseInterface
@@ -91,7 +97,9 @@ final class TransactionalClient implements ClientInterface
     {
         if (0 !== count($this->types)) {
             $batch = Batch::fromTypes(...$this->types);
-            $responseBatch = $this->client->sendRequest($batch->toRequest($this->requestFactory, $this->streamFactory));
+            $responseBatch = $this->client->sendRequest(
+                $batch->toRequest($this->requestFactory, $this->streamFactoryBatch)
+            );
 
             if (null !== ($guards = $batch->guards())) {
                 BatchResult::fromResponse(

@@ -329,4 +329,12 @@ final class Statement implements QueryResult, Iterator, Countable
         }
         return $this->streamHandler->filtered();
     }
+
+    /**
+     * @return string|array|object Complete response body data
+     */
+    public function raw()
+    {
+        return $this->streamHandler->raw();
+    }
 }

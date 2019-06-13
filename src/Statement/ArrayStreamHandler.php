@@ -30,6 +30,26 @@ class ArrayStreamHandler implements StreamHandler
         $this->batchSize = $this->length;
     }
 
+    /**
+     * Return the current result row
+     *
+     * @return array
+     */
+    public function current(): array
+    {
+        return $this->data[$this->fetches]['result'][$this->position - ($this->batchSize * $this->fetches)];
+    }
+
+    public function result(): array
+    {
+        return $this->data[$this->fetches]['result'];
+    }
+
+    public function raw(): array
+    {
+        return $this->data[$this->fetches];
+    }
+
     public function completeResult()
     {
         $completeResult = [[]];

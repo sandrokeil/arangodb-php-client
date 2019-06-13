@@ -27,6 +27,12 @@ class BatchResultTest extends TestCase
 {
     private const COLLECTION_NAME = 'xyz';
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->streamFactory = TestUtil::getStreamFactory(true);
+    }
+
     /**
      * @test
      */
@@ -151,14 +157,7 @@ class BatchResultTest extends TestCase
         $this->assertCount(4, $batchResult);
 
         foreach ($batchResult as $response) {
-            $data = $response->getBody()->getContents();
-            $this->assertContains(
-                $response->getStatusCode(),
-                [StatusCodeInterface::STATUS_ACCEPTED, StatusCodeInterface::STATUS_OK],
-                $data
-            );
-
-            $data = json_decode($data, true);
+            $data = TestUtil::getResponseContent($response, true);
             $this->assertNotNull($data);
             $this->assertTrue(is_array($data));
             $this->assertNotEmpty($data);

@@ -1,0 +1,48 @@
+FROM php:7.1-alpine
+
+RUN buildDeps=' \
+    bash \
+    git \
+    g++ \
+    make \
+    cmake \
+    libstdc++ \
+    libssl1.0 \
+    boost-dev \
+    curl-dev \
+    libc-dev \
+    pcre-dev \
+    autoconf \
+    ' \
+    && apk add --no-cache --update $buildDeps \
+    && docker-php-source extract
+
+RUN pecl install xdebug
+
+ENV VELOCYPACK_PHP master
+
+RUN git clone --branch ${VELOCYPACK_PHP} https://github.com/martin-schilling/php-velocypack /tmp/php-velocypack \
+    && cd /tmp/php-velocypack \
+    && sh clone_velocypack \
+    && cd deps/velocypack \
+    && mkdir -p build \
+    && cd build \
+    && cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-fPIC -std=c++11" \
+    && make install
+
+RUN cd /tmp/php-velocypack \
+    && phpize && ./configure \
+    && make all -j4 \
+    && mv modules/velocypack.so $(php-config --extension-dir) \
+    && rm -rf /tmp/* \
+    && echo "extension=velocypack.so" > /usr/local/etc/php/conf.d/velocypack.ini
+
+RUN pecl install xdebug
+
+# Copy custom configuration
+COPY xdebug-cli.ini /usr/local/etc/php/conf.d/
+
+WORKDIR /app
+
+# Set up the application directory
+VOLUME ["/app"]

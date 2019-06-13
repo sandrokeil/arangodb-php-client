@@ -39,11 +39,6 @@ trait ArrayAccessStreamHandlerTrait
      */
     private $batchSize;
 
-    public function result(): array
-    {
-        return $this->data[$this->fetches]['result'];
-    }
-
     public function cursorId(): ?string
     {
         return $this->data[$this->fetches]['id'] ?? null;
@@ -72,16 +67,6 @@ trait ArrayAccessStreamHandlerTrait
     public function rewind(): void
     {
         $this->position = 0;
-    }
-
-    /**
-     * Return the current result row
-     *
-     * @return array
-     */
-    public function current(): array
-    {
-        return $this->data[$this->fetches]['result'][$this->position - ($this->batchSize * $this->fetches)];
     }
 
     public function key(): int

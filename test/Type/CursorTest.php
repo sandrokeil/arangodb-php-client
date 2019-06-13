@@ -32,8 +32,7 @@ class CursorTest extends TestCase
         );
         $this->assertEquals(StatusCodeInterface::STATUS_CREATED, $response->getStatusCode());
 
-        $content = TestUtil::getResponseContent($response);
-        $data = json_decode($content, true);
+        $data = TestUtil::getResponseContent($response);
         $this->assertNotEmpty($data['id']);
         return $data['id'];
     }
@@ -49,8 +48,7 @@ class CursorTest extends TestCase
         );
         $this->assertEquals(StatusCodeInterface::STATUS_OK, $response->getStatusCode());
 
-        $content = TestUtil::getResponseContent($response);
-        $data = json_decode($content, true);
+        $data = TestUtil::getResponseContent($response);
         $this->assertTrue($data['hasMore'] ?? false);
 
         return $cursorId;

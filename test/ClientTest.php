@@ -61,9 +61,8 @@ class ClientTest extends TestCase
 
         $this->assertEquals(StatusCodeInterface::STATUS_OK, $response->getStatusCode());
 
-        $body = $response->getBody();
-        $content = $body->getContents();
+        $data = TestUtil::getResponseContent($response);
 
-        $this->assertNotFalse(strpos($content, '"code":200'));
+        $this->assertSame(200, $data['code']);
     }
 }

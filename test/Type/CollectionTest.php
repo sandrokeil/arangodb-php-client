@@ -38,8 +38,7 @@ class CollectionTest extends TestCase
         );
         $this->assertEquals(StatusCodeInterface::STATUS_OK, $response->getStatusCode());
 
-        $content = TestUtil::getResponseContent($response);
-        $data = json_decode($content, true);
+        $data = TestUtil::getResponseContent($response);
         $this->assertCount(2, $data['result'] ?? []);
     }
 
@@ -54,8 +53,7 @@ class CollectionTest extends TestCase
             Collection::count(self::COLLECTION_NAME)->toRequest($this->requestFactory, $this->streamFactory)
         );
 
-        $content = TestUtil::getResponseContent($response);
-        $data = json_decode($content, true);
+        $data = TestUtil::getResponseContent($response);
 
         $this->assertEquals(0, $data['count'] ?? -1);
     }
@@ -71,8 +69,7 @@ class CollectionTest extends TestCase
             Collection::info(self::COLLECTION_NAME)->toRequest($this->requestFactory, $this->streamFactory)
         );
 
-        $content = TestUtil::getResponseContent($response);
-        $data = json_decode($content, true);
+        $data = TestUtil::getResponseContent($response);
 
         $this->assertEquals(self::COLLECTION_NAME, $data['name'] ?? '');
     }

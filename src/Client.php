@@ -110,7 +110,8 @@ final class Client implements ClientInterface
     public function sendRequest(RequestInterface $request): ResponseInterface
     {
         try {
-            $body = $request->getBody()->getContents();
+            $stream = $request->getBody();
+            $body = $stream->getContents();
             $method = $request->getMethod();
 
             $customHeaders = $request->getHeaders();
@@ -130,7 +131,7 @@ final class Client implements ClientInterface
             throw RequestFailedException::ofRequest($request, $e);
         }
 
-        $customHeader .= 'Content-Length: ' . strlen($body) . self::EOL;
+        $customHeader .= 'Content-Length: ' . $stream->getSize() . self::EOL;
 
         $url = $this->baseUrl . $request->getUri();
 
