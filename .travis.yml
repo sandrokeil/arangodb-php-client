@@ -39,6 +39,16 @@ matrix:
     - DEPENDENCIES=""
     - USE_VPACK=false
     - ARANGODB_VERSION=3.4.0
+  - php: 7.4
+    env:
+    - DEPENDENCIES=""
+    - USE_VPACK=true
+    - ARANGODB_VERSION=3.4.0
+  - php: 7.4
+    env:
+    - DEPENDENCIES=""
+    - USE_VPACK=false
+    - ARANGODB_VERSION=3.4.0
   - php: nightly
     env:
     - DEPENDENCIES=""
