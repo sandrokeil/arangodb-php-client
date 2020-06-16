@@ -37,12 +37,13 @@ use Zend\Diactoros\StreamFactory;
 
 final class TestUtil
 {
-    public static function getClient(): ClientInterface
+    public static function getClient(): Client
     {
         $params = self::getConnectionParams();
 
         return new Client(
             $params,
+            self::getRequestFactory(),
             self::getResponseFactory(),
             self::getStreamFactory()
         );
@@ -132,7 +133,7 @@ final class TestUtil
 
         $params[ClientOptions::OPTION_DATABASE] = '_system';
 
-        $client = new Client($params, self::getResponseFactory(), self::getStreamFactory());
+        $client = new Client($params, self::getRequestFactory(), self::getResponseFactory(), self::getStreamFactory());
         $response = $client->sendRequest(
             Database::create(self::getDatabaseName())->toRequest(self::getRequestFactory(), self::getStreamFactory())
         );
@@ -155,6 +156,7 @@ final class TestUtil
 
         $client = new Client(
             $params,
+            self::getRequestFactory(),
             self::getResponseFactory(),
             self::getStreamFactory()
         );

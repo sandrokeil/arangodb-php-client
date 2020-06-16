@@ -15,14 +15,19 @@ use ArangoDb\Exception\ConnectionException;
 use ArangoDb\Exception\NetworkException;
 use ArangoDb\Exception\RequestFailedException;
 use ArangoDb\Exception\TimeoutException;
+use ArangoDb\Type\Collection;
+use ArangoDb\Type\Document;
+use ArangoDb\Type\GuardSupport;
+use ArangoDb\Type\Type;
 use Fig\Http\Message\StatusCodeInterface;
 use Psr\Http\Client\ClientInterface;
+use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 
-final class Client implements ClientInterface
+final class Client implements ClientInterface, SendTypeSupport
 {
     /**
      * Chunk size in bytes
@@ -69,6 +74,11 @@ final class Client implements ClientInterface
     private $database = '';
 
     /**
+     * @var RequestFactoryInterface
+     */
+    private $requestFactory;
+
+    /**
      * @var ResponseFactoryInterface
      */
     private $responseFactory;
@@ -80,16 +90,19 @@ final class Client implements ClientInterface
 
     /**
      * @param array|ClientOptions $options
+     * @param RequestFactoryInterface $requestFactory
      * @param ResponseFactoryInterface $responseFactory
      * @param StreamFactoryInterface $streamFactory
      */
     public function __construct(
         $options,
+        RequestFactoryInterface $requestFactory,
         ResponseFactoryInterface $responseFactory,
         StreamFactoryInterface $streamFactory
     ) {
         $this->options = $options instanceof ClientOptions ? $options : new ClientOptions($options);
         $this->useKeepAlive = ($this->options[ClientOptions::OPTION_CONNECTION] === 'Keep-Alive');
+        $this->requestFactory = $requestFactory;
         $this->responseFactory = $responseFactory;
         $this->streamFactory = $streamFactory;
         $this->updateCommonHttpHeaders();
@@ -105,6 +118,23 @@ final class Client implements ClientInterface
     public function __invoke(RequestInterface $request): ResponseInterface
     {
         return $this->sendRequest($request);
+    }
+
+    public function sendType(Type $type): ResponseInterface
+    {
+        $guard = null;
+
+        if ($type instanceof GuardSupport) {
+            $guard = $type->guard();
+        }
+
+        $response = $this->sendRequest($type->toRequest($this->requestFactory, $this->streamFactory));
+
+        if ($guard !== null) {
+            $guard($response);
+        }
+
+        return $response;
     }
 
     public function sendRequest(RequestInterface $request): ResponseInterface

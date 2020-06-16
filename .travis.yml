@@ -7,47 +7,62 @@ env:
 matrix:
   fast_finish: true
   include:
-  - php: "7.1"
+  - php: 7.1
     env:
     - DEPENDENCIES=""
     - USE_VPACK=true
-    - ARANGODB_VERSION=3.3.21
-  - php: "7.2"
+    - ARANGODB_VERSION=3.6.4
   - php: 7.1
     env:
     - DEPENDENCIES=""
     - USE_VPACK=false
-    - ARANGODB_VERSION=3.4.0
+    - ARANGODB_VERSION=3.6.4
   - php: 7.2
     env:
     - DEPENDENCIES=""
     - USE_VPACK=true
-    - PHPSTAN_CHECK=true
-    - ARANGODB_VERSION=3.4.0
-  - php: "7.3"
+    - EXECUTE_CS_CHECK=true
+    - ARANGODB_VERSION=3.6.4
+  - php: 7.2
     env:
     - DEPENDENCIES=""
+    - USE_VPACK=false
     - TEST_COVERAGE=true
-    - ARANGODB_VERSION=3.4.4
-  - php: "7.4snapshot"
+    - ARANGODB_VERSION=3.6.4
+  - php: 7.3
     env:
     - DEPENDENCIES=""
     - USE_VPACK=true
-    - ARANGODB_VERSION=3.4.4
-  - php: "nightly"
+    - ARANGODB_VERSION=3.6.4
+  - php: 7.3
+    env:
+    - DEPENDENCIES=""
+    - USE_VPACK=false
+    - ARANGODB_VERSION=3.6.4
   - php: 7.4
     env:
-      - DEPENDENCIES=""
-      - ARANGODB_VERSION=3.4.4
+    - DEPENDENCIES=""
+    - USE_VPACK=true
+    - PHPSTAN_CHECK=true
+    - ARANGODB_VERSION=3.6.4
+  - php: 7.4
+    env:
+    - DEPENDENCIES=""
+    - USE_VPACK=false
+    - ARANGODB_VERSION=3.6.4
   - php: nightly
     env:
     - DEPENDENCIES=""
     - USE_VPACK=true
-    - ARANGODB_VERSION=3.4.0
+    - ARANGODB_VERSION=3.6.4
+  - php: nightly
+    env:
+    - DEPENDENCIES=""
+    - USE_VPACK=false
+    - ARANGODB_VERSION=3.6.4
 
   allow_failures:
   - php: nightly
-  - php: 7.4snapshot
 
 addons:
   hosts:
@@ -70,12 +85,12 @@ before_script:
   - ./test/travis/setup_arangodb.sh
 
 script:
-  - if [[ $PHPSTAN_CHECK == 'true' ]]; then php vendor/bin/phpstan analyze -l max -c ./phpstan.installer.neon ./src; fi
+  - if [[ $PHPSTAN_CHECK == 'true' ]]; then ./vendor/bin/phpstan analyze -l max -c ./phpstan.installer.neon ./src; fi
   - if [[ $EXECUTE_CS_CHECK == 'true' ]]; then ./vendor/bin/phpcs; fi
   - if [[ $EXECUTE_CS_CHECK == 'true' ]]; then ./vendor/bin/docheader check src/ tests/; fi
-  - if [[ $USE_VPACK == 'true' ]]; then php ./vendor/bin/phpunit; fi
-  - if [[ $NO_VPACK == 'true' ]]; then php ./vendor/bin/phpunit --exclude-group vpack; fi
   - if [[ $TEST_COVERAGE == 'true' ]]; then php -dzend_extension=xdebug.so ./vendor/bin/phpunit --coverage-text --coverage-clover ./build/logs/clover.xml; fi
+  - if [[ $USE_VPACK == 'true' ]]; then php ./vendor/bin/phpunit; fi
+  - if [[ $USE_VPACK == 'false' ]]; then php ./vendor/bin/phpunit --exclude-group vpack; fi
 
 after_script:
   - if [[ $TEST_COVERAGE == 'true' ]]; then travis_retry php vendor/bin/php-coveralls -v ; fi
