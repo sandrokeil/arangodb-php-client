@@ -17,13 +17,11 @@ use ArangoDb\Type\Transaction as TransactionType;
 use ArangoDb\Type\Transactional;
 use ArangoDb\Type\Type;
 use Fig\Http\Message\StatusCodeInterface;
-use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\StreamFactoryInterface;
 
-final class TransactionalClient implements ClientInterface, TypeSupport, TransactionSupport
+final class TransactionalClient implements TypeSupport, TransactionSupport
 {
     /**
      * @var TypeSupport

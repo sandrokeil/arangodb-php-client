@@ -19,14 +19,13 @@ use ArangoDb\Type\BatchType;
 use ArangoDb\Type\GuardSupport;
 use ArangoDb\Type\Type;
 use Fig\Http\Message\StatusCodeInterface;
-use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 
-final class Client implements ClientInterface, TypeSupport
+final class Client implements TypeSupport
 {
     /**
      * Chunk size in bytes
