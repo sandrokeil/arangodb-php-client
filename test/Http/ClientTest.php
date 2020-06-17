@@ -9,11 +9,13 @@
 
 declare(strict_types=1);
 
-namespace ArangoDbTest;
+namespace ArangoDbTest\Http;
 
 use ArangoDb\Type\Collection;
 use ArangoDb\Type\Document;
-use ArangoDb\Url;
+use ArangoDb\Http\Url;
+use ArangoDbTest\TestCase;
+use ArangoDbTest\TestUtil;
 use Fig\Http\Message\RequestMethodInterface;
 use Fig\Http\Message\StatusCodeInterface;
 

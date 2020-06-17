@@ -7,7 +7,7 @@
  * @license   http://github.com/sandrokeil/arangodb-php-client/blob/master/LICENSE.md New BSD License
  */
 
-namespace ArangoDb;
+namespace ArangoDb\Http;
 
 use ArangoDb\Exception\LogicException;
 

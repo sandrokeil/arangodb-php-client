@@ -9,12 +9,12 @@
 
 declare(strict_types=1);
 
-namespace ArangoDb;
+namespace ArangoDb\Http;
 
 use ArangoDb\Type\Type;
 use Psr\Http\Message\ResponseInterface;
 
-interface SendTypeSupport
+interface TypeSupport
 {
     /**
      * Sends the type and validates the response against the type guard if supported

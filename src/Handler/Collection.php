@@ -14,7 +14,7 @@ namespace ArangoDb\Handler;
 use ArangoDb\Exception\GuardErrorException;
 use ArangoDb\Exception\UnexpectedResponse;
 use ArangoDb\Guard\SuccessHttpStatusCode;
-use ArangoDb\SendTypeSupport;
+use ArangoDb\Http\TypeSupport;
 use ArangoDb\Type\Collection as CollectionType;
 use ArangoDb\Util\Json;
 use Psr\Http\Message\ResponseInterface;
@@ -22,7 +22,7 @@ use Psr\Http\Message\ResponseInterface;
 final class Collection implements CollectionHandler
 {
     /**
-     * @var SendTypeSupport
+     * @var TypeSupport
      **/
     private $client;
 
@@ -31,7 +31,7 @@ final class Collection implements CollectionHandler
      */
     private static $guard;
 
-    public function __construct(SendTypeSupport $client)
+    public function __construct(TypeSupport $client)
     {
         $this->client = $client;
         self::$guard = SuccessHttpStatusCode::withoutContentId();

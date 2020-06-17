@@ -9,7 +9,7 @@
 
 declare(strict_types=1);
 
-namespace ArangoDb;
+namespace ArangoDb\Http;
 
 use ArangoDb\Type\Batch;
 use ArangoDb\Type\GuardSupport;
@@ -18,23 +18,17 @@ use ArangoDb\Type\Transactional;
 use ArangoDb\Type\Type;
 use Fig\Http\Message\StatusCodeInterface;
 use Psr\Http\Client\ClientInterface;
-use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 
-final class TransactionalClient implements ClientInterface
+final class TransactionalClient implements ClientInterface, TypeSupport, TransactionSupport
 {
     /**
-     * @var ClientInterface
+     * @var TypeSupport
      */
     private $client;
-
-    /**
-     * @var RequestFactoryInterface
-     */
-    private $requestFactory;
 
     /**
      * @var ResponseFactoryInterface
@@ -55,28 +49,15 @@ final class TransactionalClient implements ClientInterface
      */
     private $transactionalTypes = [];
 
-    /**
-     * @var StreamFactoryInterface
-     */
-    private $streamFactory;
-
-    /**
-     * @var StreamFactoryInterface
-     */
-    private $streamFactoryBatch;
-
-    public function __construct(
-        ClientInterface $client,
-        RequestFactoryInterface $requestFactory,
-        ResponseFactoryInterface $responseFactory,
-        StreamFactoryInterface $streamFactory,
-        StreamFactoryInterface $streamFactoryBatch
-    ) {
+    public function __construct(TypeSupport $client, ResponseFactoryInterface $responseFactory)
+    {
         $this->client = $client;
-        $this->requestFactory = $requestFactory;
         $this->responseFactory = $responseFactory;
-        $this->streamFactory = $streamFactory;
-        $this->streamFactoryBatch = $streamFactoryBatch;
+    }
+
+    public function sendType(Type $type): ResponseInterface
+    {
+        return $this->client->sendType($type);
     }
 
     public function sendRequest(RequestInterface $request): ResponseInterface
@@ -84,30 +65,12 @@ final class TransactionalClient implements ClientInterface
         return $this->client->sendRequest($request);
     }
 
-    /**
-     * Sends types and transactional types. Type responses and transaction response are validated via guards if provided
-     * to a type. You can also manually validate the transaction response but not the non transaction response.
-     *
-     * @param array $params
-     * @param bool $waitForSync
-     * @return ResponseInterface
-     * @throws \Psr\Http\Client\ClientExceptionInterface
-     */
     public function send(array $params = [], bool $waitForSync = false): ResponseInterface
     {
         if (0 !== count($this->types)) {
-            $batch = Batch::fromTypes(...$this->types);
-            $responseBatch = $this->client->sendRequest(
-                $batch->toRequest($this->requestFactory, $this->streamFactoryBatch)
+            $this->client->sendType(
+                Batch::fromTypes(...$this->types)
             );
-
-            if (null !== ($guards = $batch->guards())) {
-                BatchResult::fromResponse(
-                    $responseBatch,
-                    $this->responseFactory,
-                    $this->streamFactory
-                )->validate(...$guards);
-            }
         }
 
         $actions = '';
@@ -136,7 +99,7 @@ final class TransactionalClient implements ClientInterface
         $collectionsWrite = array_merge(...$collectionsWrite);
         $collectionsRead = array_merge(...$collectionsRead);
 
-        $response = $this->client->sendRequest(
+        $response = $this->client->sendType(
             TransactionType::with(
                 sprintf(
                     'function () {var db = require("@arangodb").db;%s return {%s}}',
@@ -147,7 +110,7 @@ final class TransactionalClient implements ClientInterface
                 $params,
                 array_unique($collectionsRead),
                 $waitForSync
-            )->toRequest($this->requestFactory, $this->streamFactory)
+            )
         );
 
         if (0 !== count($guards)) {

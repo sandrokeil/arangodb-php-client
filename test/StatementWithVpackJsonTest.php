@@ -9,7 +9,7 @@
 
 namespace ArangoDbTest;
 
-use ArangoDb\Statement;
+use ArangoDb\Statement\Statement;
 use ArangoDb\Statement\VpackStreamHandler;
 use ArangoDb\Statement\VpackStreamHandlerFactory;
 use ArangoDb\Type\Cursor;

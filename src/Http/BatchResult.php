@@ -9,11 +9,12 @@
 
 declare(strict_types=1);
 
-namespace ArangoDb;
+namespace ArangoDb\Http;
 
 use ArangoDb\Exception\InvalidArgumentException;
 use ArangoDb\Exception\LogicException;
 use ArangoDb\Guard\Guard;
+use ArangoDb\Http\HttpHelper;
 use ArangoDb\Type\BatchType;
 use Countable;
 use Iterator;

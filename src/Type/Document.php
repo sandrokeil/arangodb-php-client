@@ -13,7 +13,7 @@ namespace ArangoDb\Type;
 
 use ArangoDb\Exception\LogicException;
 use ArangoDb\Guard\Guard;
-use ArangoDb\Url;
+use ArangoDb\Http\Url;
 use ArangoDb\Util\Json;
 use Fig\Http\Message\RequestMethodInterface;
 use Psr\Http\Message\RequestFactoryInterface;

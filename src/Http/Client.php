@@ -9,14 +9,13 @@
 
 declare(strict_types=1);
 
-namespace ArangoDb;
+namespace ArangoDb\Http;
 
 use ArangoDb\Exception\ConnectionException;
 use ArangoDb\Exception\NetworkException;
 use ArangoDb\Exception\RequestFailedException;
 use ArangoDb\Exception\TimeoutException;
-use ArangoDb\Type\Collection;
-use ArangoDb\Type\Document;
+use ArangoDb\Type\BatchType;
 use ArangoDb\Type\GuardSupport;
 use ArangoDb\Type\Type;
 use Fig\Http\Message\StatusCodeInterface;
@@ -27,7 +26,7 @@ use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 
-final class Client implements ClientInterface, SendTypeSupport
+final class Client implements ClientInterface, TypeSupport
 {
     /**
      * Chunk size in bytes
@@ -132,6 +131,16 @@ final class Client implements ClientInterface, SendTypeSupport
 
         if ($guard !== null) {
             $guard($response);
+        }
+
+        if ($type instanceof BatchType
+            && null !== ($guards = $type->guards())
+        ) {
+            BatchResult::fromResponse(
+                $response,
+                $this->responseFactory,
+                $this->streamFactory
+            )->validate(...$guards);
         }
 
         return $response;

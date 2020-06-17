@@ -7,9 +7,10 @@
  * @license   http://github.com/sandrokeil/arangodb-php-client/blob/master/LICENSE.md New BSD License
  */
 
-namespace ArangoDb;
+namespace ArangoDb\Statement;
 
 use ArangoDb\Exception\ServerException;
+use ArangoDb\Http\Url;
 use ArangoDb\Statement\QueryResult;
 use ArangoDb\Statement\StreamHandler;
 use ArangoDb\Statement\StreamHandlerFactoryInterface;

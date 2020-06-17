@@ -9,12 +9,12 @@
 
 declare(strict_types=1);
 
-namespace ArangoDbTest\Type;
+namespace ArangoDbTest\Http;
 
-use ArangoDb\BatchResult;
 use ArangoDb\Exception\InvalidArgumentException;
 use ArangoDb\Exception\LogicException;
 use ArangoDb\Guard\Guard;
+use ArangoDb\Http\BatchResult;
 use ArangoDb\Type\Batch;
 use ArangoDb\Type\Collection;
 use ArangoDb\Type\Document;

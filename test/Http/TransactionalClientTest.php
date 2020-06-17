@@ -9,13 +9,15 @@
 
 declare(strict_types=1);
 
-namespace ArangoDbTest;
+namespace ArangoDbTest\Http;
 
 use ArangoDb\Guard\Guard;
-use ArangoDb\TransactionalClient;
+use ArangoDb\Http\TransactionalClient;
 use ArangoDb\Type\Collection;
 use ArangoDb\Type\Document;
 use ArangoDb\Type\Index;
+use ArangoDbTest\TestCase;
+use ArangoDbTest\TestUtil;
 use Fig\Http\Message\StatusCodeInterface;
 use Psr\Http\Message\ResponseInterface;
 
@@ -63,10 +65,7 @@ class TransactionalClientTest extends TestCase
 
         $this->transaction = new TransactionalClient(
             $this->client,
-            $this->requestFactory,
-            $this->responseFactory,
-            $this->streamFactory,
-            TestUtil::getStreamFactory(true)
+            $this->responseFactory
         );
     }
 

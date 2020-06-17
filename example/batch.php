@@ -9,8 +9,8 @@
 
 require __DIR__ . '/init.php';
 
-use ArangoDb\BatchResult;
 use ArangoDb\Guard\SuccessHttpStatusCode;
+use ArangoDb\Http\BatchResult;
 use ArangoDb\Type\Batch;
 use ArangoDb\Type\Collection;
 use ArangoDb\Type\Document;

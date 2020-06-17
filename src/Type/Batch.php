@@ -12,7 +12,7 @@ declare(strict_types=1);
 namespace ArangoDb\Type;
 
 use ArangoDb\Guard\Guard;
-use ArangoDb\Url;
+use ArangoDb\Http\Url;
 use Fig\Http\Message\RequestMethodInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\RequestInterface;

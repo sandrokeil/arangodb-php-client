@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace ArangoDbTest;
 
-use ArangoDb\Client;
+use ArangoDb\Http\Client;
 use ArangoDb\Statement\StreamHandlerFactoryInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\ResponseFactoryInterface;

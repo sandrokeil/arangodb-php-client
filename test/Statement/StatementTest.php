@@ -7,10 +7,11 @@
  * @license   http://github.com/sandrokeil/arangodb-php-client/blob/master/LICENSE.md New BSD License
  */
 
-namespace ArangoDbTest;
+namespace ArangoDbTest\Statement;
 
-use ArangoDb\Statement;
+use ArangoDb\Statement\Statement;
 use ArangoDb\Type\Cursor;
+use ArangoDbTest\TestCase;
 
 class StatementTest extends TestCase
 {

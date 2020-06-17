@@ -11,15 +11,15 @@ declare(strict_types=1);
 
 namespace ArangoDbTest;
 
-use ArangoDb\Client;
+use ArangoDb\Http\Client;
 use ArangoDb\Exception\ArangoDbException;
 use ArangoDb\Statement\ArrayStreamHandlerFactory;
 use ArangoDb\Statement\StreamHandlerFactoryInterface;
 use ArangoDb\Statement\VpackStreamHandler;
 use ArangoDb\Statement\VpackStreamHandlerFactory;
 use ArangoDb\Type\Database;
-use ArangoDb\ClientOptions;
-use ArangoDb\Url;
+use ArangoDb\Http\ClientOptions;
+use ArangoDb\Http\Url;
 use Fig\Http\Message\RequestMethodInterface;
 use Fig\Http\Message\StatusCodeInterface;
 use Psr\Http\Client\ClientInterface;

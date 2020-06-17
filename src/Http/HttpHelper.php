@@ -9,7 +9,7 @@
 
 declare(strict_types=1);
 
-namespace ArangoDb;
+namespace ArangoDb\Http;
 
 final class HttpHelper
 {

@@ -9,7 +9,7 @@
 
 require __DIR__ . '/init.php';
 
-use ArangoDb\Statement;
+use ArangoDb\Statement\Statement;
 use ArangoDb\Type\Batch;
 use ArangoDb\Type\Collection;
 use ArangoDb\Type\Cursor;
