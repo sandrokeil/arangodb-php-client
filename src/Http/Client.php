@@ -131,6 +131,8 @@ final class Client implements ClientInterface, TypeSupport
 
         if ($guard !== null) {
             $guard($response);
+
+            $response->getBody()->rewind();
         }
 
         if ($type instanceof BatchType
@@ -141,6 +143,8 @@ final class Client implements ClientInterface, TypeSupport
                 $this->responseFactory,
                 $this->streamFactory
             )->validate(...$guards);
+
+            $response->getBody()->rewind();
         }
 
         return $response;

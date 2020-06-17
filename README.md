@@ -15,6 +15,10 @@
 - PHP >= 7.1
 - ArangoDB server version >= 3.3
 
+## Examples
+
+Examples of how to create collections or documents and more are provided in the `examples` directory.
+
 ## Setup
 
 TBD

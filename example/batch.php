@@ -38,18 +38,11 @@ try {
     ];
 
     $batch = Batch::fromTypes(...$types);
-    $batchRequest = Batch::fromTypes(...$types)->toRequest($requestFactory, $streamFactory);
 
     echo 'SENDING BATCH WITH CREATING COLLECTION ' . $collectionName . ' and 3 docs ...';
-    $batchResponse = $client->sendRequest($batchRequest);
+    $batchResponse = $client->sendType($batch);
     echo ' Status Code: ' . $batchResponse->getStatusCode() . PHP_EOL;
-
-    $batchResult = BatchResult::fromResponse($batchResponse, $responseFactory, $streamFactory);
-
-    echo 'VALIDATE BATCH ' . PHP_EOL;
-    $batchResult->validateBatch($batch);
-
-    echo 'DONE' . PHP_EOL;
+    print_r($batchResponse->getBody()->getContents());
 
     $t2 = microtime(true);
     $totalTime = ($t2 - $t1);
