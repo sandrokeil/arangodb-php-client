@@ -1,0 +1,21 @@
+version: '2'
+services:
+  # To run tests docker-compose run --rm php vendor/bin/phpunit
+  php:
+    image: prooph/php:7.4-cli-xdebug
+    environment:
+      PHP_IDE_CONFIG: "serverName=application"
+      XDEBUG_CONFIG: "remote_host=172.17.0.1"
+      arangodb_host: "tcp://arangodb:8529"
+      arangodb_username: ""
+      arangodb_password: ""
+      arangodb_dbname: testing
+    volumes:
+      - "./:/app"
+
+  arangodb:
+    image: arangodb/arangodb:3.6.4
+    ports:
+      - 8529:8529
+    environment:
+      - ARANGO_NO_AUTH=1

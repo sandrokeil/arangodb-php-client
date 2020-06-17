@@ -26,8 +26,10 @@ and [Docker Compose](https://docs.docker.com/compose/install/ "Install Docker Co
 Install dependencies with:
 
 ```
-$ docker run --rm -i -v $(pwd):/app prooph/composer:7.2 update -o
+$ docker run --rm -i -v $(pwd):/app prooph/composer:7.4 update -o
 ```
+
+Copy `docker-compose.yml.dist` to `docker-compose.yml` and modify to your needs.
 
 Start containers with
 ```
@@ -39,10 +41,3 @@ Execute tests with
 ```
 $ docker-compose run --rm php vendor/bin/phpunit
 ```
-
-Execute Velocypack tests with
-
-```
-$ docker-compose run --rm vpack72 vendor/bin/phpunit
-```
-

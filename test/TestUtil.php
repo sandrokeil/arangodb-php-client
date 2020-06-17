@@ -72,7 +72,7 @@ final class TestUtil
         {
             public function createRequest(string $method, $uri): RequestInterface
             {
-                $type = 'application/' . (getenv('USE_VPACK') === 'true' ? 'x-velocypack' : 'json');
+                $type = 'application/json';
 
                 $request = new Request($uri, $method);
                 $request = $request->withAddedHeader('Content-Type', $type);
@@ -81,46 +81,14 @@ final class TestUtil
         };
     }
 
-    public static function getStreamFactory(bool $forceJson = false): StreamFactoryInterface
+    public static function getStreamFactory(): StreamFactoryInterface
     {
-        if (true === $forceJson || getenv('USE_VPACK') !== 'true') {
-            return new StreamFactory();
-        }
-
-        return new class implements StreamFactoryInterface
-        {
-            public function createStream(string $content = '') : StreamInterface
-            {
-                $vpack = strpos($content, '{') === 0 || strpos($content, '[') === 0 ? Vpack::fromJson($content) : Vpack::fromBinary($content);
-                $resource = fopen('php://temp', 'r+');
-                fwrite($resource, $vpack->toBinary());
-                rewind($resource);
-
-                return $this->createStreamFromResource($resource);
-            }
-
-            public function createStreamFromFile(string $file, string $mode = 'r') : StreamInterface
-            {
-                return new Stream($file, $mode);
-            }
-
-            public function createStreamFromResource($resource) : StreamInterface
-            {
-                if (! is_resource($resource) || 'stream' !== get_resource_type($resource)) {
-                    throw new \InvalidArgumentException(
-                        'Invalid stream provided; must be a stream resource'
-                    );
-                }
-                return new Stream($resource);
-            }
-        };
+        return new StreamFactory();
     }
 
     public static function getStreamHandlerFactory(): StreamHandlerFactoryInterface
     {
-        return getenv('USE_VPACK') === 'true'
-            ? new VpackStreamHandlerFactory(VpackStreamHandler::RESULT_TYPE_ARRAY)
-            : new ArrayStreamHandlerFactory();
+        return new ArrayStreamHandlerFactory();
     }
 
     public static function createDatabase(): void
@@ -165,13 +133,11 @@ final class TestUtil
         );
     }
 
-    public static function getResponseContent(ResponseInterface $response, bool $forceJson = false): array
+    public static function getResponseContent(ResponseInterface $response): array
     {
         $body = $response->getBody();
         $body->rewind();
-        return getenv('USE_VPACK') === 'true' && false === $forceJson
-            ? Vpack::fromBinary($body->getContents())->toArray()
-            : json_decode($body->getContents(), true);
+        return json_decode($body->getContents(), true);
     }
 
     public static function getDatabaseName(): string

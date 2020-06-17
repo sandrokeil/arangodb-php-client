@@ -157,7 +157,7 @@ class BatchResultTest extends TestCase
         $this->assertCount(4, $batchResult);
 
         foreach ($batchResult as $response) {
-            $data = TestUtil::getResponseContent($response, true);
+            $data = TestUtil::getResponseContent($response);
             $this->assertNotNull($data);
             $this->assertTrue(is_array($data));
             $this->assertNotEmpty($data);
