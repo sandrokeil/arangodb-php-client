@@ -12,8 +12,8 @@
 
 ## Requirements
 
-- PHP >= 7.1
-- ArangoDB server version >= 3.3
+- PHP >= 7.2
+- ArangoDB server version >= 3.4
 
 ## Examples
 
