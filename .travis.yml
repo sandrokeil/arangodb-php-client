@@ -7,58 +7,25 @@ env:
 matrix:
   fast_finish: true
   include:
-  - php: 7.1
-    env:
-    - DEPENDENCIES=""
-    - USE_VPACK=true
-    - ARANGODB_VERSION=3.4.0
-  - php: 7.1
-    env:
-    - DEPENDENCIES=""
-    - USE_VPACK=false
-    - ARANGODB_VERSION=3.4.0
   - php: 7.2
     env:
     - DEPENDENCIES=""
-    - USE_VPACK=true
     - EXECUTE_CS_CHECK=true
-    - ARANGODB_VERSION=3.4.0
-  - php: 7.2
+    - ARANGODB_VERSION=3.4.10
+  - php: 7.3
     env:
     - DEPENDENCIES=""
-    - USE_VPACK=false
+    - EXECUTE_PHPSTAN=true
+    - ARANGODB_VERSION=3.5.5
+  - php: 7.4
+    env:
+    - DEPENDENCIES=""
     - TEST_COVERAGE=true
-    - ARANGODB_VERSION=3.4.0
-  - php: 7.3
-    env:
-    - DEPENDENCIES=""
-    - USE_VPACK=true
-    - ARANGODB_VERSION=3.4.0
-  - php: 7.3
-    env:
-    - DEPENDENCIES=""
-    - USE_VPACK=false
-    - ARANGODB_VERSION=3.4.0
-  - php: 7.4
-    env:
-    - DEPENDENCIES=""
-    - USE_VPACK=true
-    - ARANGODB_VERSION=3.4.0
-  - php: 7.4
-    env:
-    - DEPENDENCIES=""
-    - USE_VPACK=false
-    - ARANGODB_VERSION=3.4.0
+    - ARANGODB_VERSION=3.6.4
   - php: nightly
     env:
     - DEPENDENCIES=""
-    - USE_VPACK=true
-    - ARANGODB_VERSION=3.4.0
-  - php: nightly
-    env:
-    - DEPENDENCIES=""
-    - USE_VPACK=false
-    - ARANGODB_VERSION=3.4.0
+    - ARANGODB_VERSION=latest
 
   allow_failures:
   - php: nightly
@@ -77,18 +44,14 @@ before_script:
   - mkdir -p "$HOME/.php-cs-fixer"
   - composer self-update
   - composer update --prefer-dist $DEPENDENCIES
-  - if [[ $USE_VPACK == 'true' ]]; then sudo apt-get update; fi
-  - if [[ $USE_VPACK == 'true' ]]; then sudo apt-get install -y git build-essential autoconf automake libtool bison re2c cmake; fi
-  - if [[ $USE_VPACK == 'true' ]]; then ./test/travis/compile_vpack.sh; fi
-  - ./test/travis/setup_arangodb.sh
+  - ./test/.travis/setup_arangodb.sh
 
 script:
-  - if [[ $PHPSTAN_CHECK == 'true' ]]; then vendor/bin/phpstan analyze -l max -c ./phpstan.installer.neon ./src; fi
+  - if [[ $EXECUTE_PHPSTAN == 'true' ]]; then ./vendor/bin/phpstan analyze -l max -c ./phpstan.installer.neon ./src; fi
   - if [[ $EXECUTE_CS_CHECK == 'true' ]]; then ./vendor/bin/phpcs; fi
   - if [[ $EXECUTE_CS_CHECK == 'true' ]]; then ./vendor/bin/docheader check src/ tests/; fi
   - if [[ $TEST_COVERAGE == 'true' ]]; then php -dzend_extension=xdebug.so ./vendor/bin/phpunit --coverage-text --coverage-clover ./build/logs/clover.xml; fi
-  - if [[ $USE_VPACK == 'true' ]]; then php -dextension=velocypack.so ./vendor/bin/phpunit; fi
-  - if [[ $USE_VPACK == 'false' ]]; then php ./vendor/bin/phpunit; fi
+  - if [[ $TEST_COVERAGE != 'true' ]]; then php ./vendor/bin/phpunit; fi
 
 after_script:
   - if [[ $TEST_COVERAGE == 'true' ]]; then travis_retry php vendor/bin/php-coveralls -v ; fi

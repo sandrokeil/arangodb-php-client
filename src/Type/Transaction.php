@@ -3,7 +3,7 @@
  * Sandro Keil (https://sandro-keil.de)
  *
  * @link      http://github.com/sandrokeil/arangodb-php-client for the canonical source repository
- * @copyright Copyright (c) 2018-2019 Sandro Keil
+ * @copyright Copyright (c) 2018-2020 Sandro Keil
  * @license   http://github.com/sandrokeil/arangodb-php-client/blob/master/LICENSE.md New BSD License
  */
 
@@ -12,11 +12,12 @@ declare(strict_types=1);
 namespace ArangoDb\Type;
 
 use ArangoDb\Guard\Guard;
-use ArangoDb\Http\Request;
-use ArangoDb\Http\VpackStream;
-use ArangoDb\Url;
+use ArangoDb\Http\Url;
+use ArangoDb\Util\Json;
 use Fig\Http\Message\RequestMethodInterface;
+use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\StreamFactoryInterface;
 
 final class Transaction implements TransactionType
 {
@@ -77,27 +78,26 @@ final class Transaction implements TransactionType
         );
     }
 
-    public function toRequest(): RequestInterface
-    {
+    public function toRequest(
+        RequestFactoryInterface $requestFactory,
+        StreamFactoryInterface $streamFactory
+    ): RequestInterface {
         $collections = $this->collections;
 
-        if (empty($collections['read'])) {
+        if (isset($collections['read']) && 0 === count($collections['read'])) {
             unset($collections['read']);
         }
+        $request = $requestFactory->createRequest(RequestMethodInterface::METHOD_POST, Url::TRANSACTION);
 
-        return new Request(
-            RequestMethodInterface::METHOD_POST,
-            Url::TRANSACTION,
-            [],
-            new VpackStream(
-                [
-                    'action' => $this->action,
-                    'collections' => $collections,
-                    'params' => $this->params,
-                    'waitForSync' => $this->waitForSync,
-                ]
-            )
-        );
+
+        return $request->withBody($streamFactory->createStream(Json::encode(
+            [
+                'action' => $this->action,
+                'collections' => $collections,
+                'params' => $this->params,
+                'waitForSync' => $this->waitForSync,
+            ]
+        )));
     }
 
     public function useGuard(Guard $guard): Type

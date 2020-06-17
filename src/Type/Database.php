@@ -3,7 +3,7 @@
  * Sandro Keil (https://sandro-keil.de)
  *
  * @link      http://github.com/sandrokeil/arangodb-php-client for the canonical source repository
- * @copyright Copyright (c) 2018-2019 Sandro Keil
+ * @copyright Copyright (c) 2018-2020 Sandro Keil
  * @license   http://github.com/sandrokeil/arangodb-php-client/blob/master/LICENSE.md New BSD License
  */
 declare(strict_types=1);
@@ -11,11 +11,12 @@ declare(strict_types=1);
 namespace ArangoDb\Type;
 
 use ArangoDb\Guard\Guard;
-use ArangoDb\Http\VpackStream;
-use ArangoDb\Url;
+use ArangoDb\Http\Url;
+use ArangoDb\Util\Json;
 use Fig\Http\Message\RequestMethodInterface;
-use ArangoDb\Http\Request;
+use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\StreamFactoryInterface;
 
 final class Database implements DatabaseType
 {
@@ -84,21 +85,17 @@ final class Database implements DatabaseType
         return new self('');
     }
 
-    public function toRequest(): RequestInterface
-    {
-        if (empty($this->options)) {
-            return new Request(
-                $this->method,
-                Url::DATABASE . $this->uri
-            );
+    public function toRequest(
+        RequestFactoryInterface $requestFactory,
+        StreamFactoryInterface $streamFactory
+    ): RequestInterface {
+        $request = $requestFactory->createRequest($this->method, Url::DATABASE . $this->uri);
+
+        if (0 === count($this->options)) {
+            return $request;
         }
 
-        return new Request(
-            $this->method,
-            Url::DATABASE . $this->uri,
-            [],
-            new VpackStream($this->options)
-        );
+        return $request->withBody($streamFactory->createStream(Json::encode($this->options)));
     }
 
     public function useGuard(Guard $guard): Type

@@ -3,7 +3,7 @@
  * Sandro Keil (https://sandro-keil.de)
  *
  * @link      http://github.com/sandrokeil/arangodb-php-client for the canonical source repository
- * @copyright Copyright (c) 2018-2019 Sandro Keil
+ * @copyright Copyright (c) 2018-2020 Sandro Keil
  * @license   http://github.com/sandrokeil/arangodb-php-client/blob/master/LICENSE.md New BSD License
  */
 
@@ -21,12 +21,14 @@ class DocumentTest extends TestCase
 {
     private const COLLECTION_NAME = 'DocumentTest';
 
-    public static function setUpBeforeClass()
+    public static function setUpBeforeClass(): void
     {
         parent::setUpBeforeClass();
 
         $createCollection = Collection::create(self::COLLECTION_NAME);
-        TestUtil::getClient()->sendRequest($createCollection->toRequest());
+        TestUtil::getClient()->sendRequest(
+            $createCollection->toRequest(TestUtil::getRequestFactory(), TestUtil::getStreamFactory())
+        );
     }
 
     /**
@@ -39,12 +41,11 @@ class DocumentTest extends TestCase
                 self::COLLECTION_NAME,
                 ['test' => 'valid'],
                 Document::FLAG_RETURN_NEW
-            )->toRequest()
+            )->toRequest($this->requestFactory, $this->streamFactory)
         );
         $this->assertEquals(StatusCodeInterface::STATUS_ACCEPTED, $response->getStatusCode());
 
-        $content = TestUtil::getResponseContent($response);
-        $data = json_decode($content, true);
+        $data = TestUtil::getResponseContent($response);
 
         return $data['_id'];
     }
@@ -64,18 +65,16 @@ class DocumentTest extends TestCase
             Document::FLAG_RETURN_NEW
         );
 
-        $response = $this->client->sendRequest($documents->toRequest());
+        $response = $this->client->sendRequest($documents->toRequest($this->requestFactory, $this->streamFactory));
 
-        $content = TestUtil::getResponseContent($response);
+        $data = TestUtil::getResponseContent($response);
 
         $this->assertEquals(StatusCodeInterface::STATUS_ACCEPTED, $response->getStatusCode());
-
-        $data = json_decode($content, true);
 
         $this->assertCount(3, $data);
 
         return array_map(
-            function (array $doc) {
+            static function (array $doc) {
                 return $doc['_id'];
             },
             $data
@@ -88,13 +87,12 @@ class DocumentTest extends TestCase
      */
     public function it_reads_document(string $id): string
     {
-        $response = $this->client->sendRequest(Document::read($id)->toRequest());
+        $response = $this->client->sendRequest(Document::read($id)->toRequest($this->requestFactory, $this->streamFactory));
 
-        $content = TestUtil::getResponseContent($response);
+        $data = TestUtil::getResponseContent($response);
 
         $this->assertEquals(StatusCodeInterface::STATUS_OK, $response->getStatusCode());
 
-        $data = json_decode($content, true);
         $this->assertSame('valid', $data['test'] ?? '');
 
         return $data['_id'];
@@ -106,7 +104,9 @@ class DocumentTest extends TestCase
      */
     public function it_deletes_document(string $id): void
     {
-        $response = $this->client->sendRequest(Document::deleteOne($id)->toRequest());
+        $response = $this->client->sendRequest(
+            Document::deleteOne($id)->toRequest($this->requestFactory, $this->streamFactory)
+        );
 
         $this->assertEquals(StatusCodeInterface::STATUS_ACCEPTED, $response->getStatusCode());
     }
@@ -117,7 +117,9 @@ class DocumentTest extends TestCase
      */
     public function it_deletes_documents(array $keys): void
     {
-        $response = $this->client->sendRequest(Document::delete(self::COLLECTION_NAME, $keys)->toRequest());
+        $response = $this->client->sendRequest(
+            Document::delete(self::COLLECTION_NAME, $keys)->toRequest($this->requestFactory, $this->streamFactory)
+        );
 
         $this->assertEquals(StatusCodeInterface::STATUS_ACCEPTED, $response->getStatusCode());
     }
@@ -132,22 +134,20 @@ class DocumentTest extends TestCase
                 self::COLLECTION_NAME,
                 ['test' => 'valid', 'foo' => 'bar'],
                 Document::FLAG_RETURN_NEW
-            )->toRequest()
+            )->toRequest($this->requestFactory, $this->streamFactory)
         );
 
-        $content = TestUtil::getResponseContent($response);
+        $data = TestUtil::getResponseContent($response);
         $this->assertEquals(StatusCodeInterface::STATUS_ACCEPTED, $response->getStatusCode());
-
-        $data = json_decode($content, true);
 
         $response = $this->client->sendRequest(
-            Document::updateOne($data['_id'], ['test' => 'more valid'], Document::FLAG_RETURN_NEW)->toRequest()
+            Document::updateOne($data['_id'], ['test' => 'more valid'], Document::FLAG_RETURN_NEW)
+                ->toRequest($this->requestFactory, $this->streamFactory)
         );
 
-        $content = TestUtil::getResponseContent($response);
+        $data = TestUtil::getResponseContent($response);
         $this->assertEquals(StatusCodeInterface::STATUS_ACCEPTED, $response->getStatusCode());
 
-        $data = json_decode($content, true);
         $this->assertSame('more valid', $data['new']['test'] ?? '');
         $this->assertSame('bar', $data['new']['foo'] ?? '');
     }
@@ -167,16 +167,14 @@ class DocumentTest extends TestCase
             Document::FLAG_RETURN_NEW
         );
 
-        $response = $this->client->sendRequest($documents->toRequest());
+        $response = $this->client->sendRequest($documents->toRequest($this->requestFactory, $this->streamFactory));
 
-        $content = TestUtil::getResponseContent($response);
+        $data = TestUtil::getResponseContent($response);
 
         $this->assertEquals(StatusCodeInterface::STATUS_ACCEPTED, $response->getStatusCode());
 
-        $data = json_decode($content, true);
-
         $data = array_map(
-            function (array $doc) {
+            static function (array $doc) {
                 $newDoc = $doc['new'];
                 $newDoc['test'] = 'more valid';
                 return $newDoc;
@@ -185,13 +183,12 @@ class DocumentTest extends TestCase
         );
 
         $response = $this->client->sendRequest(
-            Document::update(self::COLLECTION_NAME, $data, Document::FLAG_RETURN_NEW)->toRequest()
+            Document::update(self::COLLECTION_NAME, $data, Document::FLAG_RETURN_NEW)->toRequest($this->requestFactory, $this->streamFactory)
         );
 
-        $content = TestUtil::getResponseContent($response);
+        $data = TestUtil::getResponseContent($response);
         $this->assertEquals(StatusCodeInterface::STATUS_ACCEPTED, $response->getStatusCode());
 
-        $data = json_decode($content, true);
         $this->assertCount(3, $data);
         $this->assertSame('more valid', $data[0]['new']['test'] ?? '');
         $this->assertSame('more valid', $data[1]['new']['test'] ?? '');
@@ -208,22 +205,20 @@ class DocumentTest extends TestCase
                 self::COLLECTION_NAME,
                 ['test' => 'valid', 'foo' => 'bar'],
                 Document::FLAG_RETURN_NEW
-            )->toRequest()
+            )->toRequest($this->requestFactory, $this->streamFactory)
         );
 
-        $content = TestUtil::getResponseContent($response);
+        $data = TestUtil::getResponseContent($response);
         $this->assertEquals(StatusCodeInterface::STATUS_ACCEPTED, $response->getStatusCode());
-
-        $data = json_decode($content, true);
 
         $response = $this->client->sendRequest(
-            Document::replaceOne($data['_id'], ['other' => 'more valid'], Document::FLAG_RETURN_NEW)->toRequest()
+            Document::replaceOne($data['_id'], ['other' => 'more valid'], Document::FLAG_RETURN_NEW)
+                ->toRequest($this->requestFactory, $this->streamFactory)
         );
 
-        $content = TestUtil::getResponseContent($response);
+        $data = TestUtil::getResponseContent($response);
         $this->assertEquals(StatusCodeInterface::STATUS_ACCEPTED, $response->getStatusCode());
 
-        $data = json_decode($content, true);
         $this->assertSame('more valid', $data['new']['other'] ?? '');
         $this->assertArrayNotHasKey('test', $data['new']);
     }
@@ -244,16 +239,14 @@ class DocumentTest extends TestCase
             Document::FLAG_RETURN_NEW
         );
 
-        $response = $this->client->sendRequest($documents->toRequest());
+        $response = $this->client->sendRequest($documents->toRequest($this->requestFactory, $this->streamFactory));
 
-        $content = TestUtil::getResponseContent($response);
+        $data = TestUtil::getResponseContent($response);
 
         $this->assertEquals(StatusCodeInterface::STATUS_ACCEPTED, $response->getStatusCode());
 
-        $data = json_decode($content, true);
-
         $data = array_map(
-            function (array $doc) {
+            static function (array $doc) {
                 $newDoc = $doc['new'];
                 unset($newDoc['test']);
                 $newDoc['other'] = 'more valid';
@@ -263,13 +256,12 @@ class DocumentTest extends TestCase
         );
 
         $response = $this->client->sendRequest(
-            Document::replace(self::COLLECTION_NAME, $data, Document::FLAG_RETURN_NEW)->toRequest()
+            Document::replace(self::COLLECTION_NAME, $data, Document::FLAG_RETURN_NEW)->toRequest($this->requestFactory, $this->streamFactory)
         );
 
-        $content = TestUtil::getResponseContent($response);
+        $data = TestUtil::getResponseContent($response);
         $this->assertEquals(StatusCodeInterface::STATUS_ACCEPTED, $response->getStatusCode());
 
-        $data = json_decode($content, true);
         $this->assertCount(3, $data);
         $this->assertSame('more valid', $data[0]['new']['other'] ?? '');
         $this->assertArrayNotHasKey('test', $data[0]['new']);
@@ -278,5 +270,4 @@ class DocumentTest extends TestCase
         $this->assertSame('more valid', $data[2]['new']['other'] ?? '');
         $this->assertArrayNotHasKey('test', $data[2]['new']);
     }
-
 }

@@ -3,7 +3,7 @@
  * Sandro Keil (https://sandro-keil.de)
  *
  * @link      http://github.com/sandrokeil/arangodb-php-client for the canonical source repository
- * @copyright Copyright (c) 2018-2019 Sandro Keil
+ * @copyright Copyright (c) 2018-2020 Sandro Keil
  * @license   http://github.com/sandrokeil/arangodb-php-client/blob/master/LICENSE.md New BSD License
  */
 
@@ -34,7 +34,7 @@ class BatchTest extends TestCase
         $batch = Batch::fromTypes(...$types);
 
         $response = $this->client->sendRequest(
-            $batch->toRequest()
+            $batch->toRequest($this->requestFactory, $this->streamFactory)
         );
 
         $this->assertEquals(

@@ -3,7 +3,7 @@
  * Sandro Keil (https://sandro-keil.de)
  *
  * @link      http://github.com/sandrokeil/arangodb-php-client for the canonical source repository
- * @copyright Copyright (c) 2018-2019 Sandro Keil
+ * @copyright Copyright (c) 2018-2020 Sandro Keil
  * @license   http://github.com/sandrokeil/arangodb-php-client/blob/master/LICENSE.md New BSD License
  */
 
@@ -20,7 +20,7 @@ class CollectionTest extends TestCase
 {
     private const COLLECTION_NAME = 'col';
 
-    protected function tearDown()
+    protected function tearDown(): void
     {
         TestUtil::deleteCollection($this->client, self::COLLECTION_NAME);
     }
@@ -34,12 +34,11 @@ class CollectionTest extends TestCase
         $this->createTestCollection('col2');
 
         $response = $this->client->sendRequest(
-            Collection::listAll()->toRequest()
+            Collection::listAll()->toRequest($this->requestFactory, $this->streamFactory)
         );
         $this->assertEquals(StatusCodeInterface::STATUS_OK, $response->getStatusCode());
 
-        $content = TestUtil::getResponseContent($response);
-        $data = json_decode($content, true);
+        $data = TestUtil::getResponseContent($response);
         $this->assertCount(2, $data['result'] ?? []);
     }
 
@@ -51,11 +50,10 @@ class CollectionTest extends TestCase
         $this->createTestCollection(self::COLLECTION_NAME);
 
         $response = $this->client->sendRequest(
-            Collection::count(self::COLLECTION_NAME)->toRequest()
+            Collection::count(self::COLLECTION_NAME)->toRequest($this->requestFactory, $this->streamFactory)
         );
 
-        $content = TestUtil::getResponseContent($response);
-        $data = json_decode($content, true);
+        $data = TestUtil::getResponseContent($response);
 
         $this->assertEquals(0, $data['count'] ?? -1);
     }
@@ -68,11 +66,10 @@ class CollectionTest extends TestCase
         $this->createTestCollection(self::COLLECTION_NAME);
 
         $response = $this->client->sendRequest(
-            Collection::info(self::COLLECTION_NAME)->toRequest()
+            Collection::info(self::COLLECTION_NAME)->toRequest($this->requestFactory, $this->streamFactory)
         );
 
-        $content = TestUtil::getResponseContent($response);
-        $data = json_decode($content, true);
+        $data = TestUtil::getResponseContent($response);
 
         $this->assertEquals(self::COLLECTION_NAME, $data['name'] ?? '');
     }
@@ -80,7 +77,7 @@ class CollectionTest extends TestCase
     private function createTestCollection(string $name): void
     {
         $response = $this->client->sendRequest(
-            Collection::create($name)->toRequest()
+            Collection::create($name)->toRequest($this->requestFactory, $this->streamFactory)
         );
         $this->assertEquals(StatusCodeInterface::STATUS_OK, $response->getStatusCode());
     }

@@ -3,7 +3,7 @@
  * Sandro Keil (https://sandro-keil.de)
  *
  * @link      http://github.com/sandrokeil/arangodb-php-client for the canonical source repository
- * @copyright Copyright (c) 2018-2019 Sandro Keil
+ * @copyright Copyright (c) 2018-2020 Sandro Keil
  * @license   http://github.com/sandrokeil/arangodb-php-client/blob/master/LICENSE.md New BSD License
  */
 
@@ -13,11 +13,12 @@ namespace ArangoDb\Type;
 
 use ArangoDb\Exception\LogicException;
 use ArangoDb\Guard\Guard;
-use ArangoDb\Http\VpackStream;
-use ArangoDb\Url;
+use ArangoDb\Http\Url;
+use ArangoDb\Util\Json;
 use Fig\Http\Message\RequestMethodInterface;
-use ArangoDb\Http\Request;
+use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\StreamFactoryInterface;
 
 final class Document implements DocumentType, Transactional
 {
@@ -297,27 +298,23 @@ final class Document implements DocumentType, Transactional
         return new self(null, $id, Url::DOCUMENT . '/' . $id, RequestMethodInterface::METHOD_PUT, $options, $data);
     }
 
-    public function toRequest(): RequestInterface
-    {
+    public function toRequest(
+        RequestFactoryInterface $requestFactory,
+        StreamFactoryInterface $streamFactory
+    ): RequestInterface {
         $uri = $this->uri;
 
-        if (! empty($this->options)) {
+        if (0 !== count($this->options)) {
             $uri .= '?' . http_build_query($this->options);
         }
 
-        if (empty($this->data)) {
-            return new Request(
-                $this->method,
-                $uri
-            );
+        $request = $requestFactory->createRequest($this->method, $uri);
+
+        if (0 === count($this->data)) {
+            return $request;
         }
 
-        return new Request(
-            $this->method,
-            $uri,
-            [],
-            new VpackStream($this->data)
-        );
+        return $request->withBody($streamFactory->createStream(Json::encode($this->data)));
     }
 
     public function toJs(): string
@@ -326,10 +323,10 @@ final class Document implements DocumentType, Transactional
             switch ($this->method) {
                 case RequestMethodInterface::METHOD_POST:
                     return 'var rId = db.' . $this->collectionName
-                        . '.insert(' . json_encode($this->data) . ', ' . json_encode($this->options) . ');';
+                        . '.insert(' . Json::encode($this->data) . ', ' . Json::encode($this->options) . ');';
                 case RequestMethodInterface::METHOD_DELETE:
                     return 'var rId = db.' . $this->collectionName
-                        . '.removeByKeys(' . json_encode($this->data) . ');';
+                        . '.removeByKeys(' . Json::encode($this->data) . ');';
 
                 case RequestMethodInterface::METHOD_PUT:
                 case RequestMethodInterface::METHOD_PATCH:
@@ -346,10 +343,9 @@ final class Document implements DocumentType, Transactional
                     }, $this->data);
 
                     return 'var rId = db.' . $this->collectionName
-                        . '.' . $function . '(' . json_encode($keys) . ', '
-                        . json_encode($this->data) . ', '
-                        . json_encode($this->options) . ');';
-                    break;
+                        . '.' . $function . '(' . Json::encode($keys) . ', '
+                        . Json::encode($this->data) . ', '
+                        . Json::encode($this->options) . ');';
                 default:
                     break;
             }
@@ -359,14 +355,14 @@ final class Document implements DocumentType, Transactional
             switch ($this->method) {
                 case RequestMethodInterface::METHOD_PUT:
                     return 'var rId = db._replace("' . $this->id . '", '
-                        . json_encode($this->data) . ', '
-                        . json_encode($this->options) . ');';
+                        . Json::encode($this->data) . ', '
+                        . Json::encode($this->options) . ');';
                 case RequestMethodInterface::METHOD_DELETE:
-                    return 'var rId = db._remove("' . $this->id . '", ' . json_encode($this->options) . ');';
+                    return 'var rId = db._remove("' . $this->id . '", ' . Json::encode($this->options) . ');';
                 case RequestMethodInterface::METHOD_PATCH:
                     return 'var rId = db._update("' . $this->id . '", '
-                        . json_encode($this->data) . ', '
-                        . json_encode($this->options) . ');';
+                        . Json::encode($this->data) . ', '
+                        . Json::encode($this->options) . ');';
                 default:
                     return 'var rId = db._document("' . $this->id . '");';
             }
@@ -376,23 +372,35 @@ final class Document implements DocumentType, Transactional
 
     public function collectionsRead(): array
     {
-        if ($this->method === RequestMethodInterface::METHOD_GET) {
-            return [$this->determineCollectionName()];
+        if ($this->method === RequestMethodInterface::METHOD_GET
+            && $collectionName = $this->determineCollectionName()
+        ) {
+            return [$collectionName];
         }
         return [];
     }
 
     public function collectionsWrite(): array
     {
-        if ($this->method !== RequestMethodInterface::METHOD_GET) {
-            return [$this->determineCollectionName()];
+        if ($this->method !== RequestMethodInterface::METHOD_GET
+            && $collectionName = $this->determineCollectionName()
+        ) {
+            return [$collectionName];
         }
         return [];
     }
 
-    private function determineCollectionName(): string
+    private function determineCollectionName(): ?string
     {
-        return $this->collectionName ?: substr($this->id, 0, strpos($this->id, '/'));
+        if (null !== $this->collectionName) {
+            return $this->collectionName;
+        }
+        if (null !== $this->id
+            && ($length = strpos($this->id, '/')) !== false
+        ) {
+            return substr($this->id, 0, $length);
+        }
+        return null;
     }
 
     public function useGuard(Guard $guard): Type

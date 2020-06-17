@@ -23,4 +23,5 @@
 
     <!-- Paths to check -->
     <file>src</file>
+    <file>example</file>
 </ruleset>

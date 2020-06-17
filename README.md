@@ -8,14 +8,16 @@
 [![License](https://poser.pugx.org/sandrokeil/arangodb-php-client/license.png)](https://packagist.org/packages/sandrokeil/arangodb-php-client)
 
 
-[ArangoDB](https://arangodb.com/ "native multi-model database") PHP PSR 7/18 client implementation with
-[Velcoypack](https://github.com/arangodb/velocypack "a fast and compact format for serialization and storage") support
-via [martin-schilling/php-velocypack](https://github.com/martin-schilling/php-velocypack/).
+[ArangoDB](https://arangodb.com/ "native multi-model database") PHP PSR 7/17/18 client implementation.
 
 ## Requirements
 
-- PHP >= 7.1
-- ArangoDB server version >= 3.4 (3.3 has some issues with Velocypack)
+- PHP >= 7.2
+- ArangoDB server version >= 3.4
+
+## Examples
+
+Examples of how to create collections or documents and more are provided in the `examples` directory.
 
 ## Setup
 
@@ -28,8 +30,10 @@ and [Docker Compose](https://docs.docker.com/compose/install/ "Install Docker Co
 Install dependencies with:
 
 ```
-$ docker run --rm -i -v $(pwd):/app prooph/composer:7.2 update -o
+$ docker run --rm -i -v $(pwd):/app prooph/composer:7.4 update -o
 ```
+
+Copy `docker-compose.yml.dist` to `docker-compose.yml` and modify to your needs.
 
 Start containers with
 ```
@@ -41,10 +45,3 @@ Execute tests with
 ```
 $ docker-compose run --rm php vendor/bin/phpunit
 ```
-
-Execute Velocypack tests with
-
-```
-$ docker-compose run --rm vpack72 vendor/bin/phpunit
-```
-

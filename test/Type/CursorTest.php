@@ -3,7 +3,7 @@
  * Sandro Keil (https://sandro-keil.de)
  *
  * @link      http://github.com/sandrokeil/arangodb-php-client for the canonical source repository
- * @copyright Copyright (c) 2018-2019 Sandro Keil
+ * @copyright Copyright (c) 2018-2020 Sandro Keil
  * @license   http://github.com/sandrokeil/arangodb-php-client/blob/master/LICENSE.md New BSD License
  */
 
@@ -28,12 +28,11 @@ class CursorTest extends TestCase
                 'FOR i IN 0..99 RETURN {"_key": i+1}',
                 [],
                 10
-            )->toRequest()
+            )->toRequest($this->requestFactory, $this->streamFactory)
         );
         $this->assertEquals(StatusCodeInterface::STATUS_CREATED, $response->getStatusCode());
 
-        $content = TestUtil::getResponseContent($response);
-        $data = json_decode($content, true);
+        $data = TestUtil::getResponseContent($response);
         $this->assertNotEmpty($data['id']);
         return $data['id'];
     }
@@ -45,12 +44,11 @@ class CursorTest extends TestCase
     public function it_fetches_next_batch(string $cursorId): string
     {
         $response = $this->client->sendRequest(
-            Cursor::nextBatch($cursorId)->toRequest()
+            Cursor::nextBatch($cursorId)->toRequest($this->requestFactory, $this->streamFactory)
         );
         $this->assertEquals(StatusCodeInterface::STATUS_OK, $response->getStatusCode());
 
-        $content = TestUtil::getResponseContent($response);
-        $data = json_decode($content, true);
+        $data = TestUtil::getResponseContent($response);
         $this->assertTrue($data['hasMore'] ?? false);
 
         return $cursorId;
@@ -63,9 +61,8 @@ class CursorTest extends TestCase
     public function it_deletes_cursor(string $cursorId): void
     {
         $response = $this->client->sendRequest(
-            Cursor::delete($cursorId)->toRequest()
+            Cursor::delete($cursorId)->toRequest($this->requestFactory, $this->streamFactory)
         );
         $this->assertEquals(StatusCodeInterface::STATUS_ACCEPTED, $response->getStatusCode());
     }
-
 }

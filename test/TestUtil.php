@@ -3,7 +3,7 @@
  * Sandro Keil (https://sandro-keil.de)
  *
  * @link      http://github.com/sandrokeil/arangodb-php-client for the canonical source repository
- * @copyright Copyright (c) 2018-2019 Sandro Keil
+ * @copyright Copyright (c) 2018-2020 Sandro Keil
  * @license   http://github.com/sandrokeil/arangodb-php-client/blob/master/LICENSE.md New BSD License
  */
 
@@ -11,97 +11,135 @@ declare(strict_types=1);
 
 namespace ArangoDbTest;
 
-use ArangoDb\Client;
+use ArangoDb\Http\Client;
 use ArangoDb\Exception\ArangoDbException;
-use ArangoDb\Http\Request;
-use ArangoDb\Http\VpackStream;
+use ArangoDb\Statement\ArrayStreamHandlerFactory;
+use ArangoDb\Statement\StreamHandlerFactoryInterface;
 use ArangoDb\Type\Database;
-use ArangoDb\ClientOptions;
-use ArangoDb\Url;
+use ArangoDb\Http\ClientOptions;
+use ArangoDb\Http\Url;
 use Fig\Http\Message\RequestMethodInterface;
 use Fig\Http\Message\StatusCodeInterface;
 use Psr\Http\Client\ClientInterface;
+use Psr\Http\Message\RequestFactoryInterface;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\StreamFactoryInterface;
+use Laminas\Diactoros\Request;
+use Laminas\Diactoros\Response;
+use Laminas\Diactoros\StreamFactory;
+use RuntimeException;
 
 final class TestUtil
 {
-    public static function getClient(): ClientInterface
+    public static function getClient(): Client
     {
-        $type = 'application/' . (getenv('USE_VPACK') === 'true' ? 'x-velocypack' : 'json');
         $params = self::getConnectionParams();
 
         return new Client(
             $params,
-            [
-                'Content-Type' => [$type],
-                'Accept' => [$type],
-            ]
+            self::getRequestFactory(),
+            self::getResponseFactory(),
+            self::getStreamFactory()
         );
+    }
+
+    public static function getResponseFactory(): ResponseFactoryInterface
+    {
+        return new class implements ResponseFactoryInterface
+        {
+            public function createResponse(int $code = 200, string $reasonPhrase = ''): ResponseInterface
+            {
+                $response = new Response();
+
+                if ($reasonPhrase !== '') {
+                    return $response->withStatus($code, $reasonPhrase);
+                }
+
+                return $response->withStatus($code);
+            }
+        };
+    }
+
+    public static function getRequestFactory(): RequestFactoryInterface
+    {
+        return new class implements RequestFactoryInterface
+        {
+            public function createRequest(string $method, $uri): RequestInterface
+            {
+                $type = 'application/json';
+
+                $request = new Request($uri, $method);
+                $request = $request->withAddedHeader('Content-Type', $type);
+                return $request->withAddedHeader('Accept', $type);
+            }
+        };
+    }
+
+    public static function getStreamFactory(): StreamFactoryInterface
+    {
+        return new StreamFactory();
+    }
+
+    public static function getStreamHandlerFactory(): StreamHandlerFactoryInterface
+    {
+        return new ArrayStreamHandlerFactory();
     }
 
     public static function createDatabase(): void
     {
-        $type = 'application/' . (getenv('USE_VPACK') === 'true' ? 'x-velocypack' : 'json');
         $params = self::getConnectionParams();
 
         if ($params[ClientOptions::OPTION_DATABASE] === '_system') {
-            throw new \RuntimeException('"_system" database can not be created. Choose another database for tests.');
+            throw new RuntimeException('"_system" database can not be created. Choose another database for tests.');
         }
 
         $params[ClientOptions::OPTION_DATABASE] = '_system';
 
-        $client = new Client(
-            $params,
-            [
-                'Content-Type' => [$type],
-                'Accept' => [$type],
-            ]
+        $client = new Client($params, self::getRequestFactory(), self::getResponseFactory(), self::getStreamFactory());
+        $response = $client->sendRequest(
+            Database::create(self::getDatabaseName())->toRequest(self::getRequestFactory(), self::getStreamFactory())
         );
-        $response = $client->sendRequest(Database::create(self::getDatabaseName())->toRequest());
 
         if ($response->getStatusCode() !== StatusCodeInterface::STATUS_CREATED) {
             self::dropDatabase();
-            throw new \RuntimeException($response->getBody()->getContents());
+            throw new RuntimeException($response->getBody()->getContents());
         }
     }
 
     public static function dropDatabase(): void
     {
-        $type = 'application/' . (getenv('USE_VPACK') === 'true' ? 'x-velocypack' : 'json');
         $params = self::getConnectionParams();
 
         if ($params[ClientOptions::OPTION_DATABASE] === '_system') {
-            throw new \RuntimeException('"_system" database can not be dropped. Choose another database for tests.');
+            throw new RuntimeException('"_system" database can not be dropped. Choose another database for tests.');
         }
 
         $params[ClientOptions::OPTION_DATABASE] = '_system';
 
         $client = new Client(
             $params,
-            [
-                'Content-Type' => [$type],
-                'Accept' => [$type],
-            ]
+            self::getRequestFactory(),
+            self::getResponseFactory(),
+            self::getStreamFactory()
         );
-        $client->sendRequest(Database::delete(self::getDatabaseName())->toRequest());
+        $client->sendRequest(
+            Database::delete(self::getDatabaseName())->toRequest(self::getRequestFactory(), self::getStreamFactory())
+        );
     }
 
-    public static function getResponseContent(ResponseInterface $response): string
+    public static function getResponseContent(ResponseInterface $response): array
     {
         $body = $response->getBody();
-
-        if ($body instanceof VpackStream) {
-            $content = $body->vpack()->toJson();
-        } else {
-            $content = $body->getContents();
-        }
-        return $content;
+        $body->rewind();
+        return json_decode($body->getContents(), true);
     }
 
     public static function getDatabaseName(): string
     {
-        if (!self::hasRequiredConnectionParams()) {
-            throw new \RuntimeException('No connection params given');
+        if (! self::hasRequiredConnectionParams()) {
+            throw new RuntimeException('No connection params given');
         }
 
         return getenv('arangodb_dbname');
@@ -109,8 +147,8 @@ final class TestUtil
 
     public static function getConnectionParams(): array
     {
-        if (!self::hasRequiredConnectionParams()) {
-            throw new \RuntimeException('No connection params given');
+        if (! self::hasRequiredConnectionParams()) {
+            throw new RuntimeException('No connection params given');
         }
 
         return self::getSpecifiedConnectionParams();
@@ -121,8 +159,8 @@ final class TestUtil
         try {
             $client->sendRequest(
                 new Request(
-                    RequestMethodInterface::METHOD_DELETE,
-                    Url::COLLECTION . '/' . $collection
+                    Url::COLLECTION . '/' . $collection,
+                    RequestMethodInterface::METHOD_DELETE
                 )
             );
         } catch (ArangoDbException $e) {
