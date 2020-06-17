@@ -74,7 +74,7 @@ class DocumentTest extends TestCase
         $this->assertCount(3, $data);
 
         return array_map(
-            function (array $doc) {
+            static function (array $doc) {
                 return $doc['_id'];
             },
             $data
@@ -174,7 +174,7 @@ class DocumentTest extends TestCase
         $this->assertEquals(StatusCodeInterface::STATUS_ACCEPTED, $response->getStatusCode());
 
         $data = array_map(
-            function (array $doc) {
+            static function (array $doc) {
                 $newDoc = $doc['new'];
                 $newDoc['test'] = 'more valid';
                 return $newDoc;
@@ -246,7 +246,7 @@ class DocumentTest extends TestCase
         $this->assertEquals(StatusCodeInterface::STATUS_ACCEPTED, $response->getStatusCode());
 
         $data = array_map(
-            function (array $doc) {
+            static function (array $doc) {
                 $newDoc = $doc['new'];
                 unset($newDoc['test']);
                 $newDoc['other'] = 'more valid';

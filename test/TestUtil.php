@@ -15,8 +15,6 @@ use ArangoDb\Http\Client;
 use ArangoDb\Exception\ArangoDbException;
 use ArangoDb\Statement\ArrayStreamHandlerFactory;
 use ArangoDb\Statement\StreamHandlerFactoryInterface;
-use ArangoDb\Statement\VpackStreamHandler;
-use ArangoDb\Statement\VpackStreamHandlerFactory;
 use ArangoDb\Type\Database;
 use ArangoDb\Http\ClientOptions;
 use ArangoDb\Http\Url;
@@ -28,12 +26,10 @@ use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamFactoryInterface;
-use Psr\Http\Message\StreamInterface;
-use Zend\Diactoros\Request;
-use Zend\Diactoros\Response;
-use Zend\Diactoros\Stream;
-use Velocypack\Vpack;
-use Zend\Diactoros\StreamFactory;
+use Laminas\Diactoros\Request;
+use Laminas\Diactoros\Response;
+use Laminas\Diactoros\StreamFactory;
+use RuntimeException;
 
 final class TestUtil
 {
@@ -96,7 +92,7 @@ final class TestUtil
         $params = self::getConnectionParams();
 
         if ($params[ClientOptions::OPTION_DATABASE] === '_system') {
-            throw new \RuntimeException('"_system" database can not be created. Choose another database for tests.');
+            throw new RuntimeException('"_system" database can not be created. Choose another database for tests.');
         }
 
         $params[ClientOptions::OPTION_DATABASE] = '_system';
@@ -108,7 +104,7 @@ final class TestUtil
 
         if ($response->getStatusCode() !== StatusCodeInterface::STATUS_CREATED) {
             self::dropDatabase();
-            throw new \RuntimeException($response->getBody()->getContents());
+            throw new RuntimeException($response->getBody()->getContents());
         }
     }
 
@@ -117,7 +113,7 @@ final class TestUtil
         $params = self::getConnectionParams();
 
         if ($params[ClientOptions::OPTION_DATABASE] === '_system') {
-            throw new \RuntimeException('"_system" database can not be dropped. Choose another database for tests.');
+            throw new RuntimeException('"_system" database can not be dropped. Choose another database for tests.');
         }
 
         $params[ClientOptions::OPTION_DATABASE] = '_system';
@@ -143,7 +139,7 @@ final class TestUtil
     public static function getDatabaseName(): string
     {
         if (! self::hasRequiredConnectionParams()) {
-            throw new \RuntimeException('No connection params given');
+            throw new RuntimeException('No connection params given');
         }
 
         return getenv('arangodb_dbname');
@@ -152,7 +148,7 @@ final class TestUtil
     public static function getConnectionParams(): array
     {
         if (! self::hasRequiredConnectionParams()) {
-            throw new \RuntimeException('No connection params given');
+            throw new RuntimeException('No connection params given');
         }
 
         return self::getSpecifiedConnectionParams();

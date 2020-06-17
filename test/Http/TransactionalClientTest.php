@@ -162,9 +162,9 @@ class TransactionalClientTest extends TestCase
 
         $this->assertEquals(StatusCodeInterface::STATUS_OK, $response->getStatusCode());
 
-        $this->arrayHasKey('result', $data);
-        $this->arrayHasKey('rId0', $data['result']);
-        $this->arrayHasKey('rId1', $data['result']);
+        $this->assertTrue(isset($data['result']));
+        $this->assertTrue(isset($data['result']['rId0']));
+        $this->assertTrue(isset($data['result']['rId1']));
     }
 
     /**
@@ -198,9 +198,9 @@ class TransactionalClientTest extends TestCase
 
         $this->assertEquals(StatusCodeInterface::STATUS_OK, $response->getStatusCode());
 
-        $this->arrayHasKey('result', $data);
-        $this->arrayHasKey('rId0', $data['result']);
-        $this->arrayHasKey('rId1', $data['result']);
+        $this->assertTrue(isset($data['result']));
+        $this->assertTrue(isset($data['result']['rId0']));
+        $this->assertTrue(isset($data['result']['rId1']));
     }
 
     /**
@@ -232,9 +232,9 @@ class TransactionalClientTest extends TestCase
 
         $this->assertEquals(StatusCodeInterface::STATUS_OK, $response->getStatusCode());
 
-        $this->arrayHasKey('result', $data);
-        $this->arrayHasKey('rId0', $data['result']);
-        $this->arrayHasKey('rId1', $data['result']);
+        $this->assertTrue(isset($data['result']));
+        $this->assertTrue(isset($data['result']['rId0']));
+        $this->assertTrue(isset($data['result']['rId1']));
     }
 
     /**
@@ -268,9 +268,9 @@ class TransactionalClientTest extends TestCase
 
         $this->assertEquals(StatusCodeInterface::STATUS_OK, $response->getStatusCode());
 
-        $this->arrayHasKey('result', $data);
-        $this->arrayHasKey('rId0', $data['result']);
-        $this->arrayHasKey('rId1', $data['result']);
+        $this->assertTrue(isset($data['result']));
+        $this->assertTrue(isset($data['result']['rId0']));
+        $this->assertTrue(isset($data['result']['rId1']));
     }
 
     /**
@@ -324,9 +324,9 @@ class TransactionalClientTest extends TestCase
 
         $this->assertEquals(StatusCodeInterface::STATUS_OK, $response->getStatusCode());
 
-        $this->arrayHasKey('result', $data);
-        $this->arrayHasKey('rId0', $data['result']);
-        $this->arrayHasKey('rId1', $data['result']);
+        $this->assertTrue(isset($data['result']));
+        $this->assertTrue(isset($data['result']['rId0']));
+        $this->assertTrue(isset($data['result']['rId1']));
         $this->arrayHasKey('rId2', $data['result']);
 
         $response = $this->client->sendRequest(
@@ -409,10 +409,10 @@ class TransactionalClientTest extends TestCase
 
         $this->assertEquals(StatusCodeInterface::STATUS_OK, $response->getStatusCode());
 
-        $this->arrayHasKey('result', $data);
-        $this->arrayHasKey('rId0', $data['result']);
-        $this->arrayHasKey('rId1', $data['result']);
-        $this->arrayHasKey('rId2', $data['result']);
+        $this->assertTrue(isset($data['result']));
+        $this->assertTrue(isset($data['result']['rId0']));
+        $this->assertTrue(isset($data['result']['rId2']));
+        $this->assertTrue(isset($data['result']['rIdtransaction']));
 
         $this->assertSame(1, $guard->counter);
         $this->assertSame('xyz', $guard->name);

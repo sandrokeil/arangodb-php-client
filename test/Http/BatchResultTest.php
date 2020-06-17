@@ -30,7 +30,7 @@ class BatchResultTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->streamFactory = TestUtil::getStreamFactory(true);
+        $this->streamFactory = TestUtil::getStreamFactory();
     }
 
     /**
