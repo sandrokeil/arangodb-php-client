@@ -46,7 +46,7 @@ final class Collection implements CollectionHandler
 
         $data = Json::decode($response->getBody()->getContents());
 
-        if (!isset($data['id'])) {
+        if (! isset($data['id'])) {
             throw UnexpectedResponse::forType($type, $response);
         }
 
@@ -84,7 +84,7 @@ final class Collection implements CollectionHandler
 
         $data = Json::decode($response->getBody()->getContents());
 
-        if (!isset($data['count'])) {
+        if (! isset($data['count'])) {
             throw UnexpectedResponse::forType($type, $response);
         }
 

@@ -46,7 +46,7 @@ final class Document implements DocumentHandler
 
         $data = Json::decode($response->getBody()->getContents());
 
-        if (!isset($data['_id'])) {
+        if (! isset($data['_id'])) {
             throw UnexpectedResponse::forType($type, $response);
         }
 
@@ -96,5 +96,4 @@ final class Document implements DocumentHandler
     {
         return $this->has($collectionName . self::ID_SEPARATOR . $id);
     }
-
 }

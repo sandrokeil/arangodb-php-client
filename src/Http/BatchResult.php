@@ -14,7 +14,6 @@ namespace ArangoDb\Http;
 use ArangoDb\Exception\InvalidArgumentException;
 use ArangoDb\Exception\LogicException;
 use ArangoDb\Guard\Guard;
-use ArangoDb\Http\HttpHelper;
 use ArangoDb\Type\BatchType;
 use Countable;
 use Iterator;
@@ -22,6 +21,9 @@ use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 
+/**
+ * @implements Iterator<string, ResponseInterface>
+ */
 final class BatchResult implements Countable, Iterator
 {
     /**
@@ -128,17 +130,14 @@ final class BatchResult implements Countable, Iterator
         next($this->responses);
     }
 
-    /**
-     * @return int|string|null
-     */
     public function key()
     {
-        return key($this->responses);
+        return key($this->responses); // @phpstan-ignore-line
     }
 
     public function valid(): bool
     {
-        return $this->key() !== null;
+        return $this->key() !== null; // @phpstan-ignore-line
     }
 
     public function rewind(): void

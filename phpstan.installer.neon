@@ -6,5 +6,6 @@ parameters:
 		- php
 		- dist
 	reportUnmatchedIgnoredErrors: true
+	checkMissingIterableValueType: false
 	ignoreErrors:
-		- '#and array|string|null results in an error#'
+		- '#Only booleans are allowed in &&, string\|null given on the right side#'

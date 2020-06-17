@@ -300,7 +300,7 @@ final class Client implements TypeSupport
      */
     private function open(RequestInterface $request): void
     {
-        if ($this->useKeepAlive && $this->handle !== null && is_resource($this->handle)) {
+        if ($this->useKeepAlive && $this->handle !== null && is_resource($this->handle)) { // @phpstan-ignore-line
             if (! feof($this->handle)) {
                 return;
             }

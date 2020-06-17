@@ -112,7 +112,7 @@ final class TransactionalClient implements TypeSupport, TransactionSupport
         );
 
         if (0 !== count($guards)) {
-            \array_walk($guards, static function ($guard) use ($response) {
+            \array_walk($guards, static function ($guard) use ($response): void {
                 $guard($response);
             });
         }

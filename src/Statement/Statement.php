@@ -11,9 +11,6 @@ namespace ArangoDb\Statement;
 
 use ArangoDb\Exception\ServerException;
 use ArangoDb\Http\Url;
-use ArangoDb\Statement\QueryResult;
-use ArangoDb\Statement\StreamHandler;
-use ArangoDb\Statement\StreamHandlerFactoryInterface;
 use Countable;
 use Fig\Http\Message\RequestMethodInterface;
 use Fig\Http\Message\StatusCodeInterface;
@@ -23,6 +20,9 @@ use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\RequestInterface;
 
+/**
+ * @implements Iterator<int, mixed>
+ */
 final class Statement implements QueryResult, Iterator, Countable
 {
     /**

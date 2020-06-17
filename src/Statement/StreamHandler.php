@@ -15,6 +15,9 @@ use Countable;
 use Iterator;
 use Psr\Http\Message\StreamInterface;
 
+/**
+ * @extends Iterator<int, mixed>
+ */
 interface StreamHandler extends QueryResult, Iterator, Countable
 {
     /**

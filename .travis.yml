@@ -14,15 +14,17 @@ matrix:
   - php: 7.2
     env:
     - DEPENDENCIES=""
-    - TEST_COVERAGE=true
+    - EXECUTE_CS_CHECK=true
     - ARANGODB_VERSION=3.4.10
   - php: 7.3
     env:
     - DEPENDENCIES=""
+    - EXECUTE_PHPSTAN=true
     - ARANGODB_VERSION=3.5.5
   - php: 7.4
     env:
     - DEPENDENCIES=""
+    - TEST_COVERAGE=true
     - ARANGODB_VERSION=3.6.4
   - php: nightly
     env:
@@ -49,7 +51,7 @@ before_script:
   - ./test/.travis/setup_arangodb.sh
 
 script:
-  - if [[ $PHPSTAN_CHECK == 'true' ]]; then ./vendor/bin/phpstan analyze -l max -c ./phpstan.installer.neon ./src; fi
+  - if [[ $EXECUTE_PHPSTAN == 'true' ]]; then ./vendor/bin/phpstan analyze -l max -c ./phpstan.installer.neon ./src; fi
   - if [[ $EXECUTE_CS_CHECK == 'true' ]]; then ./vendor/bin/phpcs; fi
   - if [[ $EXECUTE_CS_CHECK == 'true' ]]; then ./vendor/bin/docheader check src/ tests/; fi
   - if [[ $TEST_COVERAGE == 'true' ]]; then php -dzend_extension=xdebug.so ./vendor/bin/phpunit --coverage-text --coverage-clover ./build/logs/clover.xml; fi

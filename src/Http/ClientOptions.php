@@ -10,11 +10,14 @@
 namespace ArangoDb\Http;
 
 use ArangoDb\Exception\LogicException;
+use ArrayAccess;
 
 /**
  * Immutable client options array container
+ *
+ * @implements ArrayAccess<string, mixed>
  */
-final class ClientOptions implements \ArrayAccess
+final class ClientOptions implements ArrayAccess
 {
     // connection options
     public const OPTION_ENDPOINT = 'endpoint';
