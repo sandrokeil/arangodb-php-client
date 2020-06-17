@@ -372,21 +372,25 @@ final class Document implements DocumentType, Transactional
 
     public function collectionsRead(): array
     {
-        if ($this->method === RequestMethodInterface::METHOD_GET) {
-            return [$this->determineCollectionName()];
+        if ($this->method === RequestMethodInterface::METHOD_GET
+            && $collectionName = $this->determineCollectionName()
+        ) {
+            return [$collectionName];
         }
         return [];
     }
 
     public function collectionsWrite(): array
     {
-        if ($this->method !== RequestMethodInterface::METHOD_GET) {
-            return [$this->determineCollectionName()];
+        if ($this->method !== RequestMethodInterface::METHOD_GET
+            && $collectionName = $this->determineCollectionName()
+        ) {
+            return [$collectionName];
         }
         return [];
     }
 
-    private function determineCollectionName(): string
+    private function determineCollectionName(): ?string
     {
         if (null !== $this->collectionName) {
             return $this->collectionName;
@@ -396,6 +400,7 @@ final class Document implements DocumentType, Transactional
         ) {
             return substr($this->id, 0, $length);
         }
+        return null;
     }
 
     public function useGuard(Guard $guard): Type
