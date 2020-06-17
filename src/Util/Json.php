@@ -3,7 +3,7 @@
  * Sandro Keil (https://sandro-keil.de)
  *
  * @link      http://github.com/sandrokeil/arangodb-php-client for the canonical source repository
- * @copyright Copyright (c) 2018-2019 Sandro Keil
+ * @copyright Copyright (c) 2018-2020 Sandro Keil
  * @license   http://github.com/sandrokeil/arangodb-php-client/blob/master/LICENSE.md New BSD License
  */
 declare(strict_types=1);
@@ -17,8 +17,8 @@ use ArangoDb\Exception\JsonException;
  * prooph/pdo-event-store, released with the copyright and license below.
  *
  * @see       https://github.com/prooph/pdo-event-store for the canonical source repository
- * @copyright Copyright (c) 2016-2019 prooph software GmbH <contact@prooph.de>
- * @copyright Copyright (c) 2016-2019 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
+ * @copyright Copyright (c) 2016-2020 prooph software GmbH <contact@prooph.de>
+ * @copyright Copyright (c) 2016-2020 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
  * @license   https://github.com/prooph/pdo-event-store/blob/master/LICENSE New BSD License
  */
 class Json
