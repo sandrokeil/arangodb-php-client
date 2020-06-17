@@ -10,16 +10,16 @@ matrix:
   - php: 7.1
     env:
     - DEPENDENCIES=""
-    - ARANGODB_VERSION=3.3.4
+    - ARANGODB_VERSION=3.3.25
   - php: 7.2
     env:
     - DEPENDENCIES=""
     - TEST_COVERAGE=true
-    - ARANGODB_VERSION=3.4.4
+    - ARANGODB_VERSION=3.4.10
   - php: 7.3
     env:
     - DEPENDENCIES=""
-    - ARANGODB_VERSION=3.5.4
+    - ARANGODB_VERSION=3.5.5
   - php: 7.4
     env:
     - DEPENDENCIES=""
@@ -27,7 +27,7 @@ matrix:
   - php: nightly
     env:
     - DEPENDENCIES=""
-    - ARANGODB_VERSION=3.6.4
+    - ARANGODB_VERSION=latest
 
   allow_failures:
   - php: nightly
@@ -46,7 +46,7 @@ before_script:
   - mkdir -p "$HOME/.php-cs-fixer"
   - composer self-update
   - composer update --prefer-dist $DEPENDENCIES
-  - ./test/travis/setup_arangodb.sh
+  - ./test/.travis/setup_arangodb.sh
 
 script:
   - if [[ $PHPSTAN_CHECK == 'true' ]]; then ./vendor/bin/phpstan analyze -l max -c ./phpstan.installer.neon ./src; fi

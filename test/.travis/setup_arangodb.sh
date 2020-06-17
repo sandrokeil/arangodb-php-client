@@ -2,8 +2,8 @@
 
 echo "PHP version: $TRAVIS_PHP_VERSION"
 
-docker pull arangodb/arangodb:${ARANGODB_VERSION}
-docker run -d -e ARANGO_NO_AUTH=1 -p 8529:8529 arangodb/arangodb:${ARANGODB_VERSION}
+docker pull arangodb:${ARANGODB_VERSION}
+docker run -d -e ARANGO_NO_AUTH=1 -p 8529:8529 arangodb:${ARANGODB_VERSION}
 
 sleep 2
 
