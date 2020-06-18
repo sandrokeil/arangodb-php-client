@@ -37,9 +37,9 @@ final class Document implements DocumentHandler
         self::$guard = SuccessHttpStatusCode::withoutContentId();
     }
 
-    public function save(string $collectionName, array $doc, int $flags = 0): string
+    public function save(string $collectionName, array $docs, int $flags = 0): string
     {
-        $type = DocumentType::create($collectionName, $doc, $flags)
+        $type = DocumentType::create($collectionName, $docs, $flags)
             ->useGuard(self::$guard);
 
         $response = $this->client->sendType($type);
