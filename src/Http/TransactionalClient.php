@@ -21,7 +21,7 @@ use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 
-final class TransactionalClient implements TypeSupport, TransactionSupport
+final class TransactionalClient implements TransactionSupport
 {
     /**
      * @var TypeSupport
