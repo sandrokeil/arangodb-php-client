@@ -5,6 +5,9 @@
 ### Added
 
 * Dependencies `TypeSupport` and `CursorType` for `Statement` class
+* Interface `StatementHandler`
+* `TypeSupport` interface to `TransactionSupport` interface 
+* Transaction methods to TransactionSupport` interface 
 
 ### Deprecated
 
