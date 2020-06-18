@@ -4,7 +4,7 @@
 
 ### Added
 
-* Nothing
+* Dependencies `TypeSupport` and `CursorType` for `Statement` class
 
 ### Deprecated
 
@@ -12,11 +12,11 @@
 
 ### Removed
 
-* Nothing
+* Dependencies `ClientInterface` and `RequestInterface` from `Statement` class
 
 ### Fixed
 
-* Nothing
+* Cursor id can be null in `Statement` class
 
 ## 0.2.0 (2020-06-17)
 

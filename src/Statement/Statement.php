@@ -9,16 +9,14 @@
 
 namespace ArangoDb\Statement;
 
+use ArangoDb\Exception\NoCursorId;
 use ArangoDb\Exception\ServerException;
-use ArangoDb\Http\Url;
+use ArangoDb\Http\TypeSupport;
+use ArangoDb\Type\CursorType;
 use Countable;
-use Fig\Http\Message\RequestMethodInterface;
 use Fig\Http\Message\StatusCodeInterface;
 use Iterator;
 use Psr\Http\Client\ClientExceptionInterface;
-use Psr\Http\Client\ClientInterface;
-use Psr\Http\Message\RequestFactoryInterface;
-use Psr\Http\Message\RequestInterface;
 
 /**
  * @implements Iterator<int, mixed>
@@ -26,19 +24,14 @@ use Psr\Http\Message\RequestInterface;
 final class Statement implements QueryResult, Iterator, Countable
 {
     /**
-     * @var ClientInterface
+     * @var TypeSupport
      */
     private $client;
 
     /**
-     * @var RequestFactoryInterface
+     * @var CursorType
      */
-    private $requestFactory;
-
-    /**
-     * @var RequestInterface
-     */
-    private $request;
+    private $cursor;
 
     /**
      * @var StreamHandler
@@ -60,20 +53,17 @@ final class Statement implements QueryResult, Iterator, Countable
     /**
      * Query is executed on first access
      *
-     * @param ClientInterface $client - connection to be used
-     * @param RequestInterface $request Cursor request
-     * @param RequestFactoryInterface $requestFactory
+     * @param TypeSupport $client - connection to be used
+     * @param CursorType $cursor
      * @param StreamHandlerFactoryInterface $streamHandlerFactory
      */
     public function __construct(
-        ClientInterface $client,
-        RequestInterface $request,
-        RequestFactoryInterface $requestFactory,
+        TypeSupport $client,
+        CursorType $cursor,
         StreamHandlerFactoryInterface $streamHandlerFactory
     ) {
         $this->client = $client;
-        $this->request = $request;
-        $this->requestFactory = $requestFactory;
+        $this->cursor = $cursor;
         $this->streamHandlerFactory = $streamHandlerFactory;
     }
 
@@ -85,15 +75,17 @@ final class Statement implements QueryResult, Iterator, Countable
      */
     private function fetchOutstanding(): void
     {
-        $request = $this->fetches === 0
-            ? $this->request
-            : $this->requestFactory->createRequest(
-                RequestMethodInterface::METHOD_PUT,
-                Url::CURSOR . '/' . $this->streamHandler->cursorId()
-            );
+        if ($this->fetches === 0) {
+            $request = $this->cursor;
+        } else {
+            $cursorId = $this->streamHandler->cursorId();
 
-        $request->getBody()->rewind();
-        $response = $this->client->sendRequest($request);
+            if ($cursorId === null) {
+                throw NoCursorId::forType($this->cursor);
+            }
+            $request = $this->cursor::nextBatch($cursorId);
+        }
+        $response = $this->client->sendType($request);
 
         $httpStatusCode = $response->getStatusCode();
 
