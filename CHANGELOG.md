@@ -8,6 +8,7 @@
 * Interface `StatementHandler`
 * `TypeSupport` interface to `TransactionSupport` interface 
 * Transaction methods to TransactionSupport` interface 
+* Allow the configuration of type and guard for handler classes
 
 ### Deprecated
 
