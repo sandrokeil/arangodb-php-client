@@ -7,8 +7,13 @@
 [![Total Downloads](https://poser.pugx.org/sandrokeil/arangodb-php-client/downloads.png)](https://packagist.org/packages/sandrokeil/arangodb-php-client)
 [![License](https://poser.pugx.org/sandrokeil/arangodb-php-client/license.png)](https://packagist.org/packages/sandrokeil/arangodb-php-client)
 
+[ArangoDB](https://arangodb.com/ "native multi-model database") HTTP client implementation with PHP 
+PSR [7](https://www.php-fig.org/psr/psr-7/) / [17](https://www.php-fig.org/psr/psr-17/) / [18](https://www.php-fig.org/psr/psr-18/) support.
 
-[ArangoDB](https://arangodb.com/ "native multi-model database") PHP PSR 7/17/18 client implementation.
+ * **Well tested.** Besides unit test and continuous integration/inspection this solution is also ready for production use.
+ * **Framework agnostic** This PHP library does not depends on any framework but you can use it with your favourite framework.
+ * **Every change is tracked**. Want to know whats new? Take a look at [CHANGELOG.md](https://github.com/sandrokeil/interop-config/blob/master/CHANGELOG.md)
+ * **Listen to your ideas.** Have a great idea? Bring your tested pull request or open a new issue.
 
 ## Requirements
 
@@ -17,11 +22,7 @@
 
 ## Examples
 
-Examples of how to create collections or documents and more are provided in the `examples` directory.
-
-## Setup
-
-TBD
+Examples of how to create collections or documents and more are provided in the [`example`](example) directory.
 
 ## Tests
 If you want to run the unit tests locally you need [Docker](https://docs.docker.com/engine/installation/ "Install Docker")

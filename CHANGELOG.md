@@ -4,6 +4,16 @@
 
 ### Added
 
+### Deprecated
+
+### Removed
+
+### Fixed
+
+## 0.3.0 (2020-07-07)
+
+### Added
+
 * Dependencies `TypeSupport` and `CursorType` for `Statement` class
 * Interface `StatementHandler`
 * `TypeSupport` interface to `TransactionSupport` interface 
