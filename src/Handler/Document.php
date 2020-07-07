@@ -13,6 +13,7 @@ namespace ArangoDb\Handler;
 
 use ArangoDb\Exception\GuardErrorException;
 use ArangoDb\Exception\UnexpectedResponse;
+use ArangoDb\Guard\Guard;
 use ArangoDb\Guard\SuccessHttpStatusCode;
 use ArangoDb\Http\TypeSupport;
 use ArangoDb\Type\Document as DocumentType;
@@ -27,20 +28,34 @@ final class Document implements DocumentHandler
     private $client;
 
     /**
-     * @var SuccessHttpStatusCode
+     * @var Guard
      */
-    private static $guard;
+    private $guard;
 
-    public function __construct(TypeSupport $client)
-    {
+    /**
+     * @var string
+     */
+    protected $documentClass;
+
+    /**
+     * @param TypeSupport $client
+     * @param string $documentClass FQCN of the class which implements \ArangoDb\Type\DocumentType
+     * @param Guard|null $guard
+     */
+    public function __construct(
+        TypeSupport $client,
+        string $documentClass = DocumentType::class,
+        Guard $guard = null
+    ) {
         $this->client = $client;
-        self::$guard = SuccessHttpStatusCode::withoutContentId();
+        $this->documentClass = $documentClass;
+        $this->guard = $guard ?? SuccessHttpStatusCode::withoutContentId();
     }
 
-    public function save(string $collectionName, array $doc, int $flags = 0): string
+    public function save(string $collectionName, array $docs, int $flags = 0): string
     {
-        $type = DocumentType::create($collectionName, $doc, $flags)
-            ->useGuard(self::$guard);
+        $type = ($this->documentClass)::create($collectionName, $docs, $flags)
+            ->useGuard($this->guard);
 
         $response = $this->client->sendType($type);
 
@@ -55,7 +70,7 @@ final class Document implements DocumentHandler
 
     public function get(string $documentId): ResponseInterface
     {
-        $type = DocumentType::read($documentId)->useGuard(self::$guard);
+        $type = ($this->documentClass)::read($documentId)->useGuard($this->guard);
 
         return $this->client->sendType($type);
     }
@@ -67,8 +82,8 @@ final class Document implements DocumentHandler
 
     public function remove(string $documentId): void
     {
-        $type = DocumentType::deleteOne($documentId)
-            ->useGuard(self::$guard);
+        $type = ($this->documentClass)::deleteOne($documentId)
+            ->useGuard($this->guard);
 
         $this->client->sendType($type);
     }
@@ -80,8 +95,8 @@ final class Document implements DocumentHandler
 
     public function has(string $documentId): bool
     {
-        $type = DocumentType::readHeader($documentId)
-            ->useGuard(self::$guard);
+        $type = ($this->documentClass)::readHeader($documentId)
+            ->useGuard($this->guard);
 
         try {
             $this->client->sendType($type);

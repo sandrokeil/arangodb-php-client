@@ -55,8 +55,7 @@ try {
     foreach ($statements as $query => $bindVars) {
         $statement = new Statement(
             $client,
-            Cursor::create($query, $bindVars, 1000, true)->toRequest($requestFactory, $streamFactory),
-            $requestFactory,
+            Cursor::create($query, $bindVars, 1000, true),
             $streamHandlerFactory
         );
 

@@ -13,6 +13,7 @@ namespace ArangoDb\Handler;
 
 use ArangoDb\Exception\GuardErrorException;
 use ArangoDb\Exception\UnexpectedResponse;
+use ArangoDb\Guard\Guard;
 use ArangoDb\Guard\SuccessHttpStatusCode;
 use ArangoDb\Http\TypeSupport;
 use ArangoDb\Type\Collection as CollectionType;
@@ -27,20 +28,34 @@ final class Collection implements CollectionHandler
     private $client;
 
     /**
-     * @var SuccessHttpStatusCode
+     * @var Guard
      */
-    private static $guard;
+    private $guard;
 
-    public function __construct(TypeSupport $client)
-    {
+    /**
+     * @var string
+     */
+    protected $collectionClass;
+
+    /**
+     * @param TypeSupport $client
+     * @param string $collectionClass FQCN of the class which implements \ArangoDb\Type\CollectionType
+     * @param Guard|null $guard
+     */
+    public function __construct(
+        TypeSupport $client,
+        string $collectionClass = CollectionType::class,
+        Guard $guard = null
+    ) {
         $this->client = $client;
-        self::$guard = SuccessHttpStatusCode::withoutContentId();
+        $this->collectionClass = $collectionClass;
+        $this->guard = $guard ?? SuccessHttpStatusCode::withoutContentId();
     }
 
     public function create(string $collectionName, array $options = []): string
     {
-        $type = CollectionType::create($collectionName, $options)
-            ->useGuard(self::$guard);
+        $type = ($this->collectionClass)::create($collectionName, $options)
+            ->useGuard($this->guard);
 
         $response = $this->client->sendType($type);
 
@@ -55,8 +70,8 @@ final class Collection implements CollectionHandler
 
     public function has(string $collectionName): bool
     {
-        $type = CollectionType::info($collectionName)
-            ->useGuard(self::$guard);
+        $type = ($this->collectionClass)::info($collectionName)
+            ->useGuard($this->guard);
 
         try {
             $this->client->sendType($type);
@@ -69,16 +84,16 @@ final class Collection implements CollectionHandler
 
     public function drop(string $collectionName): void
     {
-        $type = CollectionType::delete($collectionName)
-            ->useGuard(self::$guard);
+        $type = ($this->collectionClass)::delete($collectionName)
+            ->useGuard($this->guard);
 
         $this->client->sendType($type);
     }
 
     public function count(string $collectionName): int
     {
-        $type = CollectionType::count($collectionName)
-            ->useGuard(self::$guard);
+        $type = ($this->collectionClass)::count($collectionName)
+            ->useGuard($this->guard);
 
         $response = $this->client->sendType($type);
 
@@ -93,16 +108,16 @@ final class Collection implements CollectionHandler
 
     public function get(string $collectionName): ResponseInterface
     {
-        $type = CollectionType::info($collectionName)
-            ->useGuard(self::$guard);
+        $type = ($this->collectionClass)::info($collectionName)
+            ->useGuard($this->guard);
 
         return $this->client->sendType($type);
     }
 
     public function truncate(string $collectionName): void
     {
-        $type = CollectionType::truncate($collectionName)
-            ->useGuard(self::$guard);
+        $type = ($this->collectionClass)::truncate($collectionName)
+            ->useGuard($this->guard);
 
         $this->client->sendType($type);
     }

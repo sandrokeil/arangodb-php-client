@@ -28,8 +28,7 @@ class StatementTest extends TestCase
                 'FOR i IN 1..' . $count . ' RETURN {"_key": i+1}',
                 [],
                 $count
-            )->toRequest($this->requestFactory, $this->streamFactory),
-            $this->requestFactory,
+            ),
             $this->streamHandlerFactory
         );
         $this->assertEquals(0, $statement->fetches());
@@ -58,8 +57,7 @@ class StatementTest extends TestCase
                 'FOR i IN 0..99 RETURN {"_key": i+1}',
                 [],
                 10
-            )->toRequest($this->requestFactory, $this->streamFactory),
-            $this->requestFactory,
+            ),
             $this->streamHandlerFactory
         );
         $this->assertEquals(0, $statement->fetches());
@@ -88,8 +86,7 @@ class StatementTest extends TestCase
                 'FOR i IN 0..99 RETURN {"_key": i+1}',
                 [],
                 10
-            )->toRequest($this->requestFactory, $this->streamFactory),
-            $this->requestFactory,
+            ),
             $this->streamHandlerFactory
         );
 
@@ -126,8 +123,7 @@ class StatementTest extends TestCase
     {
         $statement = new Statement(
             $this->client,
-            Cursor::create('RETURN {"_key": 1}')->toRequest($this->requestFactory, $this->streamFactory),
-            $this->requestFactory,
+            Cursor::create('RETURN {"_key": 1}'),
             $this->streamHandlerFactory
         );
 
@@ -144,8 +140,7 @@ class StatementTest extends TestCase
     {
         $statement = new Statement(
             $this->client,
-            Cursor::create('RETURN "test"')->toRequest($this->requestFactory, $this->streamFactory),
-            $this->requestFactory,
+            Cursor::create('RETURN "test"'),
             $this->streamHandlerFactory
         );
 
@@ -169,8 +164,7 @@ class StatementTest extends TestCase
                 true,
                 null,
                 ['fullCount' => true]
-            )->toRequest($this->requestFactory, $this->streamFactory),
-            $this->requestFactory,
+            ),
             $this->streamHandlerFactory
         );
 
@@ -195,8 +189,7 @@ class StatementTest extends TestCase
                 'FOR i IN 0..99  LIMIT 50 RETURN {"_key": i+1}',
                 [],
                 10
-            )->toRequest($this->requestFactory, $this->streamFactory),
-            $this->requestFactory,
+            ),
             $this->streamHandlerFactory
         );
 

@@ -9,8 +9,8 @@
 
 namespace ArangoDb\Exception;
 
+use ArangoDb\Type\Type;
 use Psr\Http\Client\ClientExceptionInterface;
-use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
 final class ServerException extends RuntimeException implements ClientExceptionInterface
@@ -21,24 +21,24 @@ final class ServerException extends RuntimeException implements ClientExceptionI
     private $response;
 
     /**
-     * @var RequestInterface
+     * @var Type
      */
-    private $request;
+    private $type;
 
-    public static function with(RequestInterface $request, ResponseInterface $response): self
+    public static function with(Type $type, ResponseInterface $response): self
     {
         $self = new self(
             sprintf('Response with status code "%s" was returned.', $response->getStatusCode()),
             $response->getStatusCode()
         );
-        $self->request = $request;
+        $self->type = $type;
         $self->response = $response;
         return $self;
     }
 
-    public function getRequest(): RequestInterface
+    public function getType(): Type
     {
-        return $this->request;
+        return $this->type;
     }
 
     public function getResponse(): ResponseInterface

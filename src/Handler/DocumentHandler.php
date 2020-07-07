@@ -29,5 +29,5 @@ interface DocumentHandler
 
     public function hasById(string $collectionName, string $id): bool;
 
-    public function save(string $collectionName, array $doc, int $flags = 0): string;
+    public function save(string $collectionName, array $docs, int $flags = 0): string;
 }
