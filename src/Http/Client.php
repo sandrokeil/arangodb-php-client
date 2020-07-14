@@ -359,6 +359,6 @@ final class Client implements TypeSupport
     private function close(): void
     {
         fclose($this->handle);
-        unset($this->handle);
+        $this->handle = null; // @phpstan-ignore-line
     }
 }
