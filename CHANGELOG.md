@@ -10,6 +10,18 @@
 
 ### Fixed
 
+## 0.3.1 (2020-07-14)
+
+### Added
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+* Undefined property `$handle` in `\ArangoDb\Http\Client`
+
 ## 0.3.0 (2020-07-07)
 
 ### Added

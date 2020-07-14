@@ -7,7 +7,6 @@
         "arangodb",
         "http",
         "client",
-        "vpack",
         "json",
         "php"
     ],

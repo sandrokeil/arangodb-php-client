@@ -84,12 +84,7 @@ trait ArrayAccessStreamHandlerTrait
      */
     public function valid(): bool
     {
-        if ($this->position <= $this->length - 1) {
-            // we have more results than the current position is
-            return true;
-        }
-
-        return ($this->position <= $this->length - 1);
+        return $this->position <= $this->length - 1;
     }
 
     public function writesExecuted(): ?int
