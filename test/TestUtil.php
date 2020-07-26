@@ -14,6 +14,7 @@ namespace ArangoDbTest;
 use ArangoDb\Http\Client;
 use ArangoDb\Exception\ArangoDbException;
 use ArangoDb\Statement\ArrayStreamHandlerFactory;
+use ArangoDb\Statement\SimdjsonStreamHandlerFactory;
 use ArangoDb\Statement\StreamHandlerFactoryInterface;
 use ArangoDb\Type\Database;
 use ArangoDb\Http\ClientOptions;
@@ -84,7 +85,8 @@ final class TestUtil
 
     public static function getStreamHandlerFactory(): StreamHandlerFactoryInterface
     {
-        return new ArrayStreamHandlerFactory();
+        return new SimdjsonStreamHandlerFactory();
+//        return new ArrayStreamHandlerFactory();
     }
 
     public static function createDatabase(): void
